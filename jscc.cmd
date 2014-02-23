@@ -1,0 +1,1 @@
+@java -jar "c:\Program Files (x86)\Closure\compiler.jar" --js %1 --js_output_file %2
