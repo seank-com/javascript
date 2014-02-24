@@ -6,21 +6,30 @@ var http = require('http'),
     fs = require('fs'),
     url = require('url'),
     htmlparser = require('htmlparser2'), // npm install htmlparser2 -g
-    tryQuiet = function (doit) {
+    tryLog = function (doit) {
         "use strict";
 
         try {
             doit();
-        } catch (ignore) {
+        } catch (err) {
+            console.log('ERROR: ' + err.message);
         }
     },
     downloadFile = function (url, filename) {
         "use strict";
 
-        var file = fs.createWriteStream(filename);
+        var file = fs.createWriteStream(filename),
+            req = http.get(url, function (res) {
+                res.on('data', function (chunk) {
+                    file.write(chunk, 'binary');
+                });
+                res.on('end', function () {
+                    file.end();
+                });
+            });
 
-        http.get(url, function (res) {
-            res.pipe(file);
+        req.on('error', function (err) {
+            console.log('ERROR: ' + err.message);
         });
     },
     getHMTL = function (url, onResult) {
@@ -53,7 +62,7 @@ var http = require('http'),
                     console.log('processing thread ' + currentThread);
 
                     currentThread = path.resolve(destDir, currentThread);
-                    tryQuiet(function () {
+                    tryLog(function () {
                         fs.mkdirSync(currentThread);
                     });
 
@@ -111,7 +120,7 @@ var http = require('http'),
             uri = argv[2];
             dir = path.resolve('.', argv[3]);
 
-            tryQuiet(function () {
+            tryLog(function () {
                 fs.mkdirSync(dir);
             });
 
