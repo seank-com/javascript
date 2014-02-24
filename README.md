@@ -3,14 +3,14 @@
 
 Configuration steps, scripts and tools I use on windows machines.
 
-## Setting up you devl environment
+### Setting up you devl environment
 
 - Install [Node](http://nodejs.org/)
 - Install [Sublime Text 2](http://www.sublimetext.com/2)
 - Install [KDiff3](http://kdiff3.sourceforge.net/)
 - Install [Git](http://msysgit.github.io/)
 
-## From an elevated command prompt
+### From an elevated command prompt
 
 ```
 git config --global user.name "Your Name Here"
@@ -19,7 +19,7 @@ cd "c:\Program Files (x86)"
 git clone https://github.com/seank-com/dev-win-config.git Scripts
 ```
 
-## Create a shortcut on your desktop with the following Target
+### Create a shortcut on your desktop with the following Target
 
 ```
 C:\Windows\System32\cmd.exe /k "C:\Program Files (x86)\Scripts\Init.cmd"
@@ -27,7 +27,7 @@ C:\Windows\System32\cmd.exe /k "C:\Program Files (x86)\Scripts\Init.cmd"
 
 Click the Advanced button and check 'Run as administrator'
 
-## Launch the dev window from the shortcut
+### Launch the dev window from the shortcut
 
 ```
 git config --global core.editor "'c:/Program Files/Sublime Text 2/sublime_text.exe' -w"
