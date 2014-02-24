@@ -7,6 +7,7 @@ Configuration steps, scripts and tools I use on windows machines.
 
 - Install [Node](http://nodejs.org/)
 - Install [Sublime Text 2](http://www.sublimetext.com/2)
+- Install [AutoHotKey](http://www.autohotkey.com/)
 - Install [KDiff3](http://kdiff3.sourceforge.net/)
 - Install [Git](http://msysgit.github.io/)
 
