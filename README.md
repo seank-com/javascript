@@ -11,6 +11,8 @@ Configuration steps, scripts and tools I use on windows machines.
 - Install [KDiff3](http://kdiff3.sourceforge.net/)
 - Install [Git](http://msysgit.github.io/)
 
+    Be sure to select "Run Git and included Unix tools from the Windows Command Prompt". We will remove the paths later (if you were worried)
+
 ### From an elevated command prompt
 
 ```
@@ -27,6 +29,13 @@ C:\Windows\System32\cmd.exe /k "C:\Program Files (x86)\Scripts\Init.cmd"
 ```
 
 Click the Advanced button and check 'Run as administrator'
+
+From Win-X | System | Advanced system settings | Environment Variables..., remove the following from the end of PATH
+
+```
+;C:\Program Files (x86)\Git\cmd;C:\Program Files (x86)\Git\bin
+
+```
 
 ### Launch the dev window from the shortcut
 
