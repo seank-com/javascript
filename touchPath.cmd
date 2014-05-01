@@ -1,1 +1,1 @@
-node  "%~dp0\touchPath.js" %*
+@node  "%~dp0\touchPath.js" %*

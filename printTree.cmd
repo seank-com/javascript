@@ -1,1 +1,1 @@
-node  "%~dp0\printTree.js" %*
+@node  "%~dp0\printTree.js" %*
