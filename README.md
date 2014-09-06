@@ -3,7 +3,7 @@
 
 Configuration steps, scripts and tools I use on windows machines.
 
-### Setting up you devl environment
+### Setting up you development environment
 
 - Install [Node](http://nodejs.org/)
 - Install [Sublime Text 2](http://www.sublimetext.com/2)
