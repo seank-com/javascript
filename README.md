@@ -3,7 +3,7 @@
 
 Configuration steps, scripts and tools I use on windows machines.
 
-### Setting up you development environment
+### Setting up your development environment
 
 - Install [Node](http://nodejs.org/)
 - Install [Sublime Text 2](http://www.sublimetext.com/2)
@@ -47,6 +47,7 @@ git config --global difftool.prompt false
 git config --global difftool.windiff.cmd  "'C:/Program Files (x86)/Scripts/windiff.exe' $LOCAL $REMOTE"
 git config --global merge.tool kdiff3
 git config --global mergetool.kdiff3.cmd "'C:/Program Files (x86)/KDiff3/kdiff3.exe' $BASE $LOCAL $REMOTE -o $MERGED"
+git config --global alias.lga "log --graph --oneline --al --decorate"
 npm install jslint -g
 ```
 
