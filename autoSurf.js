@@ -81,9 +81,16 @@ var http = require('http'),
                         if (attribs.src) {
                             results.push(url.resolve(sourceUrl, attribs.src));
                         }
+                        if (attribs["data-src"]) {
+                            results.push(url.resolve(sourceUrl, attribs["data-src"]));
+                        }
                     } else if (name === 'iframe') {
                         if (attribs.src) {
                             results.push(url.resolve(sourceUrl, attribs.src));
+                        }
+                    } else if (name === 'meta') {
+                        if (attribs.content) {
+                            results.push(url.resolve(sourceUrl, attribs.content));
                         }
                     }
                 },
