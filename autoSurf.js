@@ -482,7 +482,7 @@ if (!String.prototype.format) {
 
         // If we are passed an array then just use that.
         if (args.length === 1 && typeof args[0] === "object") {
-            args = args[0];
+            args = args[0] || [];
         }
 
         return this.replace(/\{(\d+)\}/g, function (match, number) {
