@@ -175,7 +175,7 @@ var http = require('http'),
             },
             startDownload = function (element) {
 
-                var re = {},
+                var re = new RegExp("^(.*)$"),
                     matches = [],
                     filename = '',
                     directory = path.resolve('.', '.');
@@ -188,19 +188,17 @@ var http = require('http'),
                     }
 
                     re = new RegExp(operation.pattern);
-                    matches = element.match(re);
-
-                    if (operation.filename) {
-                        filename = operation.filename.format(matches);
-                    }
-
-                    if (operation.directory) {
-                        directory = operation.directory.format(matches);
-                    }
                 }
 
-                if (filename === '') {
+                matches = element.match(re);
+                if (operation.filename) {
+                    filename = operation.filename.format(matches);
+                } else {
                     filename = element.substr(element.lastIndexOf('/') + 1);
+                }
+
+                if (operation.directory) {
+                    directory = operation.directory.format(matches);
                 }
 
                 filename = path.resolve(directory, filename);
