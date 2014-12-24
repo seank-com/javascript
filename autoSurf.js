@@ -339,6 +339,77 @@ var http = require('http'),
             callback(operation);
         });
     },
+    //  {
+    //    "operation": "IO",
+    //    "input": [url, ...],
+    //    "inputFilename": "{1}"
+    //    "outputFilename": "{1}"
+    //    "output": [url, ...] - all the urls from input and inputFilename
+    //  }
+    //
+    operationIO = function (operation, callback) {
+        "use strict";
+
+        var processWrite = function (err) {
+
+                if (err) {
+                    console.log(err);
+                } else {
+                    callback(operation);
+                }
+            },
+            saveFile = function() {
+
+                var filename = '',
+                    data = '';
+
+                if (operation.outputFilename) {
+                    filename = path.resolve('.', operation.outputFilename);
+                    data = JSON.stringify(pruneDuplicates(operation.output));
+                    fs.writeFile(filename, data, processWrite);
+                } else {
+                    process.nextTick(function () {
+                        callback(operation);
+                    });
+                }
+            },
+            processRead = function (err, data) {
+
+                var loaded = [],
+                    count = 0,
+                    i = 0;
+
+                if (err && err.code !== 'ENOENT') {
+                    console.log(err);
+                } else {
+                    if (!err) {
+                        loaded = JSON.parse(data);
+
+                        count = loaded.length;
+                        for(i = 0; i < count; i += 1) {
+                            operation.output.push(loaded[i]);
+                        }
+                    }
+
+                    saveFile();
+                }
+            },
+            loadFile = function() {
+
+                var filename = '';
+
+                if (operation.inputFilename) {
+                    filename = path.resolve('.', operation.inputFilename);
+                    fs.readFile(filename, { 'encoding': "utf8" }, processRead);
+                } else {
+                    saveFile();
+                }
+            };
+
+        operation.output = operation.input;
+
+        loadFile();
+    },
     operations = [],
     doNextOperation = function (operation) {
         "use strict";
@@ -372,6 +443,9 @@ var http = require('http'),
                 break;
             case 'generate':
                 operationGenerate(nextOperation, doNextOperation);
+                break;
+            case 'IO':
+                operationIO(nextOperation, doNextOperation);
                 break;
             }
         } else {
