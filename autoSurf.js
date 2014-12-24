@@ -309,7 +309,7 @@ var http = require('http'),
     //    "start": 2
     //    "increment": 1
     //    "end" : 10
-    //    "output": [url, ...] - for each url in input replaces {0} with values from start to end increased by increment unitl the value exceeds end
+    //    "output": [url, ...] - for each url in patterns replaces {0} with values from start to end increased by increment unitl the value exceeds end
     //  }
     //
     operationGenerate = function (operation, callback) {
