@@ -1,1 +1,1 @@
-@node  "%~dp0\findSymbol.js" %*
+@node  "%~dp0\work\findSymbol.js" %*
