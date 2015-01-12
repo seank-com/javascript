@@ -1,6 +1,12 @@
 /*jslint indent: 4, node: true, stupid: true */
 /*global require: false, process: false, readFileSync: false */
 
+// printTree.js
+//
+// There used to be a command line program that would print 
+// a directory tree to the console. Here is my try at writing
+// it in node real quick.
+//
 var path = require('path'),
     fs = require('fs'),
     argv = process.argv,

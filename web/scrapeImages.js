@@ -1,6 +1,11 @@
 /*jslint indent: 4, node: true, stupid: true */
 /*global require: false, process: false, readFileSync: false */
 
+// scrapeImages.js
+//
+// The precursor to autoSurf.js, uses htmlparser2 downloading
+// and parsing webpages to find the images therein.
+//
 var http = require('http'),
     path = require('path'),
     fs = require('fs'),

@@ -1,5 +1,12 @@
 /*jslint indent: 4, node: true, stupid: true*/
 /*global require: false, process: false, readFileSync: false, touchPath: true */
+
+// touchPath.js
+//
+// Adusts the filetime of a heirarchy of files.
+// Useful for photos taken from a camera where 
+// the date was not set correctly. 
+//
 var path = require('path'),
     fs = require('fs'),
     argv = process.argv,

@@ -1,6 +1,12 @@
 /*jslint indent: 4, node: true, stupid: true */
 /*global require: false, process: false, readFileSync: false */
 
+// makeDoit.js
+//
+// One little script that reads index files for title information 
+// to rename a directory of captured video. Makes short work of an
+// otherwise offensively manual task. 
+//
 var fs = require('fs'),
     path = require('path'),
     htmlparser = require('htmlparser2'), // npm install htmlparser2 -g

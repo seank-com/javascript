@@ -1,6 +1,10 @@
 /*jslint indent: 4, node: true, stupid: true */
 /*global require: false, process: false, readFileSync: false */
 
+// lookupOMDB.js
+//
+// Uses the OMDB api to lookup info about the movies in the array below.
+//
 var http = require('http'),
     fs = require('fs'),
     querystring = require('querystring'),

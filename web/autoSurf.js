@@ -1,6 +1,11 @@
 /*jslint indent: 4, node: true */
 /*global require: false, process: false */
 
+// autoSurf.js
+//
+// Load a chain of operations in json format and execute the operations therein
+// to fetch, parse and download data from the web.
+//
 var http = require('http'),
     path = require('path'),
     fs = require('fs'),

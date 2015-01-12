@@ -1,6 +1,11 @@
 /*jslint indent: 4, node: true, stupid: true */
 /*global require: false, process: false, readFileSync: false */
 
+// compareDirs.js
+//
+// Second swing at trying to reconcile online backups. 
+// Takes the roots of two folders and diffs them.
+//
 var path = require('path'),
     fs = require('fs'),
     argv = process.argv,

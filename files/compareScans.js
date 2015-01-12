@@ -1,6 +1,13 @@
 /*jslint indent: 4, node: true */
 /*global require: false, process: false, readFileSync: false */
 
+// compareScans.js
+// 
+// The second part of a three phase solution for understanding the
+// state of an online backup. This is the third swing at trying to 
+// reconcile online backups. Compares two scans created by scanFolder.js
+// the diff created by compareScans.js to try and detect file moves and 
+//
 var path = require('path'),
     fs = require('fs'),
     argv = process.argv,

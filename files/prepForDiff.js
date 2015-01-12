@@ -1,6 +1,12 @@
 /*jslint indent: 4, node: true, stupid: true */
 /*global require: false, process: false, readFileSync: false */
 
+// prepForDiff.js
+//
+// First swing at trying to reconcile online backups. 
+// Takes the output.txt from dir /b /s >output.txt
+// and removes the roots so windiff can be more helpful
+//
 var console = require('console'),
     path = require('path'),
     fs = require('fs'),

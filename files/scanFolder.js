@@ -1,6 +1,13 @@
 /*jslint indent: 4, node: true, stupid: true */
 /*global require: false, process: false, readFileSync: false */
 
+// scanFolder.js
+// 
+// The first part of a three phase solution for understanding the
+// state of an online backup. This is the third swing at trying to 
+// reconcile online backups. Scans a folder hierachy noting file names 
+// and sizes along the way.
+//
 var path = require('path'),
     fs = require('fs'),
     argv = process.argv,

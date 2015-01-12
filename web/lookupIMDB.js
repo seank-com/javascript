@@ -6,6 +6,13 @@ var path = require('path'),
     argv = process.argv,
     argc = argv.length;
 
+// lookupIMDB.js
+//
+// Since IMDB doesn't have an API, scan a folder of files
+// trimming extensions and parenthesis and produce output
+// that can be written to a cmd file to open chrome pages
+// for the search results.
+//
 function processDirectory(dir) {
     "use strict";
 

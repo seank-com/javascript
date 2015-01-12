@@ -1,6 +1,11 @@
 /*jslint indent: 4, node: true, stupid: true */
 /*global require: false, process: false */
 
+// findSymbol.js
+//
+// Needed for some porting work figure out where symbol 
+// was coming from given and list of directory paths.
+//
 var fs = require('fs'),
     path = require('path'),
     includes = {

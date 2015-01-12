@@ -1,6 +1,13 @@
 /*jslint indent: 4, node: true, stupid: true */
 /*global require: false */
 
+/*
+ * pinochle.js
+ * 
+ * Shuffles and deals a doubledeck pinochle hand 100,000 times,
+ * counting the meld in each players hand and collecting
+ * stats on the best meld seen.
+ */
 var argv = process.argv,
     argc = argv.length,
     /*
