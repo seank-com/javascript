@@ -39,9 +39,9 @@ var http = require('http'),
         for (wordLength = 4; wordLength <= line.length; wordLength += 1) {
             for (index = 0; index < line.length - wordLength + 1; index += 1) {
                 word = line.substr(index, wordLength);
-               if (wordlist.indexOf(word) !== -1) {
-                   console.log(word);
-               }
+                if (wordlist.indexOf(word) !== -1) {
+                    console.log(word);
+                }
             }
         }
     },
@@ -82,61 +82,61 @@ var http = require('http'),
             line = board.matrix[i].join("");
             findWords(line);
         }
-       console.log('----------COLUMNS');
-       for (i = 0; i < board.maxX; i += 1) {
-           line = board.matrix.map(mapColumn(i)).join("");
-           findWords(line);
-       }
-       console.log('----------DIAGONALS DOWN LEFT');
-       for (i = 0; i < board.maxX; i += 1) {
-           line = board.matrix.map(mapDiagonalDownLeft(i)).join("");
-           findWords(line);
-       }
-       console.log('----------DIAGONALS DOWN RIGHT');
-       for (i = 0; i < board.maxX; i += 1) {
-           line = board.matrix.map(mapDiagonalDownRight(i)).join("");
-           findWords(line);
-       }
-       console.log('----------DIAGONALS UP LEFT');
-       for (i = 0; i < board.maxX; i += 1) {
-           line = board.matrix.reverse().map(mapDiagonalDownLeft(i)).join("");
-           findWords(line);
-       }
-       console.log('----------DIAGONALS UP RIGHT');
-       for (i = 0; i < board.maxX; i += 1) {
-           line = board.matrix.reverse().map(mapDiagonalDownRight(i)).join("");
-           findWords(line);
-       }
-       console.log('----------ROWS REVERSED');
-       for (i = 0; i < board.maxY; i += 1) {
-           line = board.matrix[i].reverse().join("");
-           findWords(line);
-       }
-       console.log('----------COLUMNS REVERSED');
-       for (i = 0; i < board.maxX; i += 1) {
-           line = board.matrix.map(mapColumn(i)).reverse().join("");
-           findWords(line);
-       }
-       console.log('----------DIAGONALS DOWN LEFT REVERSED');
-       for (i = 0; i < board.maxX; i += 1) {
-           line = board.matrix.map(mapDiagonalDownLeft(i)).reverse().join("");
-           findWords(line);
-       }
-       console.log('----------DIAGONALS DOWN RIGHT REVERSED');
-       for (i = 0; i < board.maxX; i += 1) {
-           line = board.matrix.map(mapDiagonalDownRight(i)).reverse().join("");
-           findWords(line);
-       }
-       console.log('----------DIAGONALS UP LEFT REVERSED');
-       for (i = 0; i < board.maxX; i += 1) {
-           line = board.matrix.reverse().map(mapDiagonalDownLeft(i)).reverse().join("");
-           findWords(line);
-       }
-       console.log('----------DIAGONALS UP RIGHT REVERSED');
-       for (i = 0; i < board.maxX; i += 1) {
-           line = board.matrix.reverse().map(mapDiagonalDownRight(i)).reverse().join("");
-           findWords(line);
-       }
+        console.log('----------COLUMNS');
+        for (i = 0; i < board.maxX; i += 1) {
+            line = board.matrix.map(mapColumn(i)).join("");
+            findWords(line);
+        }
+        console.log('----------DIAGONALS DOWN LEFT');
+        for (i = 0; i < board.maxX; i += 1) {
+            line = board.matrix.map(mapDiagonalDownLeft(i)).join("");
+            findWords(line);
+        }
+        console.log('----------DIAGONALS DOWN RIGHT');
+        for (i = 0; i < board.maxX; i += 1) {
+            line = board.matrix.map(mapDiagonalDownRight(i)).join("");
+            findWords(line);
+        }
+        console.log('----------DIAGONALS UP LEFT');
+        for (i = 0; i < board.maxX; i += 1) {
+            line = board.matrix.reverse().map(mapDiagonalDownLeft(i)).join("");
+            findWords(line);
+        }
+        console.log('----------DIAGONALS UP RIGHT');
+        for (i = 0; i < board.maxX; i += 1) {
+            line = board.matrix.reverse().map(mapDiagonalDownRight(i)).join("");
+            findWords(line);
+        }
+        console.log('----------ROWS REVERSED');
+        for (i = 0; i < board.maxY; i += 1) {
+            line = board.matrix[i].reverse().join("");
+            findWords(line);
+        }
+        console.log('----------COLUMNS REVERSED');
+        for (i = 0; i < board.maxX; i += 1) {
+            line = board.matrix.map(mapColumn(i)).reverse().join("");
+            findWords(line);
+        }
+        console.log('----------DIAGONALS DOWN LEFT REVERSED');
+        for (i = 0; i < board.maxX; i += 1) {
+            line = board.matrix.map(mapDiagonalDownLeft(i)).reverse().join("");
+            findWords(line);
+        }
+        console.log('----------DIAGONALS DOWN RIGHT REVERSED');
+        for (i = 0; i < board.maxX; i += 1) {
+            line = board.matrix.map(mapDiagonalDownRight(i)).reverse().join("");
+            findWords(line);
+        }
+        console.log('----------DIAGONALS UP LEFT REVERSED');
+        for (i = 0; i < board.maxX; i += 1) {
+            line = board.matrix.reverse().map(mapDiagonalDownLeft(i)).reverse().join("");
+            findWords(line);
+        }
+        console.log('----------DIAGONALS UP RIGHT REVERSED');
+        for (i = 0; i < board.maxX; i += 1) {
+            line = board.matrix.reverse().map(mapDiagonalDownRight(i)).reverse().join("");
+            findWords(line);
+        }
     },
     getBoard = function (rows) {
         "use strict";
