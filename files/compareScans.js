@@ -183,7 +183,7 @@ var path = require('path'),
         var tree1 = null,
             tree2 = null,
             continueWhenDone = function () {
-                var diff = [];
+                var diff = {};
 
                 if (tree1 && tree2) {
                     process.nextTick(function () {
