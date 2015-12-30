@@ -120,7 +120,7 @@ var path = require('path'),
     bill.Statement.forEach(function (current) {
       var MeterName = current["Meter Name"],
         ConsumedQuantity = Number(current["Consumed Quantity"]),
-        Cost = Number(current.Value.slice(1, -4));
+        Cost = Number(current.Value.slice(1, -4).replace(/\,/g, ""));
 
       echo("Recording Total: ", MeterName, ConsumedQuantity, Cost);
 
