@@ -10,6 +10,12 @@ var path = require('path'),
   parseCSV = require('../common/parseCSV.js'),
   argv = process.argv,
   argc = argv.length,
+  verbose = false,
+  echo = function () {
+    if (verbose) {
+      console.log.apply(null, arguments);
+    }
+  },
   trimQuotes = function (column) {
     "use strict";
 
@@ -38,12 +44,14 @@ var path = require('path'),
     switch (this.state) {
     case 0: // Looking for next section
       if (line.length === 1 && line[0] !== "") {
+        echo("Found section: ", line[0]);
         this.section = line[0];
         this.csv[this.section] = [];
         this.state = 1;
       }
       break;
     case 1: // record labels
+      echo("Recording Label: ", line);
       this.labels = line;
       this.state = 2;
       break;
@@ -60,6 +68,7 @@ var path = require('path'),
         this.labels.forEach(function (label, i) {
           item[label] = trimQuotes(line[i]);
         });
+        echo("Recording item: ", item);
         this.csv[this.section].push(item);
       }
       break;
@@ -94,10 +103,12 @@ var path = require('path'),
         ConsumedQuantity = Number(current["Consumed Quantity"]),
         InstanceId = current["Instance Id"];
 
+      echo("Accumulating Subtotal: ", InstanceId, MeterName, ConsumedQuantity);
       bill.Subtotals[InstanceId] = bill.Subtotals[InstanceId] || {};
       bill.Subtotals[InstanceId][MeterName] = bill.Subtotals[InstanceId][MeterName] || 0;
       bill.Subtotals[InstanceId][MeterName] += ConsumedQuantity;
 
+      echo("Accumulating Total: ", MeterName, ConsumedQuantity);
       bill.Totals[MeterName] = bill.Totals[MeterName] || {};
       bill.Totals[MeterName].AggregateTotal = bill.Totals[MeterName].AggregateTotal || 0;
       bill.Totals[MeterName].AggregateTotal += ConsumedQuantity;
@@ -110,6 +121,8 @@ var path = require('path'),
       var MeterName = current["Meter Name"],
         ConsumedQuantity = Number(current["Consumed Quantity"]),
         Cost = Number(current.Value.slice(1, -4));
+
+      echo("Recording Total: ", MeterName, ConsumedQuantity, Cost);
 
       bill.Totals[MeterName] = bill.Totals[MeterName] || {};
       bill.Totals[MeterName].Total = ConsumedQuantity;
