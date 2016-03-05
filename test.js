@@ -2,26 +2,22 @@
 /*global */
 
 var argv = process.argv,
-    argc = argv.length
-    main = function (argc, argv)
-    {
-        "use strict";
-
-        var map = [];
-
-        map[1] = true;
-        map[300] = true;
-        map[5] = true;
-        map[200] = true;
-        map[4] = true;
-        map[6] = true;
-
-        console.log(Object.keys(map).length);
-        console.log(Object.keys(map));
-
-        console.log("map.hasOwnProperty(200) = " + map.hasOwnProperty(200));
-        console.log("map.hasOwnProperty(400) = " + map.hasOwnProperty(400));
+  argc = argv.length,
+  testLicense = function (licenses) {
+    var license = (licenses || [])[0];
+    if (license) {
+      console.log(license);
+    } else {
+      console.log("no license");
     }
+  },
+  main = function (argc, argv) {
+
+    var license = [];
+    testLicense();
+    testLicense(license);
+    license.push("Yay!");
+    testLicense(license);
+  };
 
 main(argc, argv);
-
