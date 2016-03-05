@@ -99,34 +99,34 @@ var path = require('path'),
     bill.Totals = {};
 
     bill["Daily Usage"].forEach(function (current) {
-      var MeterName = current["Meter Name"],
+      var ItemName = current["Meter Category"] + " - " + current["Meter Name"],
         ConsumedQuantity = Number(current["Consumed Quantity"]),
         InstanceId = current["Instance Id"];
 
-      echo("Accumulating Subtotal: ", InstanceId, MeterName, ConsumedQuantity);
+      echo("Accumulating Subtotal: ", InstanceId, ItemName, ConsumedQuantity);
       bill.Subtotals[InstanceId] = bill.Subtotals[InstanceId] || {};
-      bill.Subtotals[InstanceId][MeterName] = bill.Subtotals[InstanceId][MeterName] || 0;
-      bill.Subtotals[InstanceId][MeterName] += ConsumedQuantity;
+      bill.Subtotals[InstanceId][ItemName] = bill.Subtotals[InstanceId][ItemName] || 0;
+      bill.Subtotals[InstanceId][ItemName] += ConsumedQuantity;
 
-      echo("Accumulating Total: ", MeterName, ConsumedQuantity);
-      bill.Totals[MeterName] = bill.Totals[MeterName] || {};
-      bill.Totals[MeterName].AggregateTotal = bill.Totals[MeterName].AggregateTotal || 0;
-      bill.Totals[MeterName].AggregateTotal += ConsumedQuantity;
+      echo("Accumulating Total: ", ItemName, ConsumedQuantity);
+      bill.Totals[ItemName] = bill.Totals[ItemName] || {};
+      bill.Totals[ItemName].AggregateTotal = bill.Totals[ItemName].AggregateTotal || 0;
+      bill.Totals[ItemName].AggregateTotal += ConsumedQuantity;
     });
   },
   totalBill = function (bill) {
     "use strict";
 
     bill.Statement.forEach(function (current) {
-      var MeterName = current["Meter Name"],
+      var ItemName = current["Meter Category"] + " - " + current["Meter Name"],
         ConsumedQuantity = Number(current["Consumed Quantity"]),
         Cost = Number(current.Value.slice(1, -4).replace(/\,/g, ""));
 
-      echo("Recording Total: ", MeterName, ConsumedQuantity, Cost);
+      echo("Recording Total: ", ItemName, ConsumedQuantity, Cost);
 
-      bill.Totals[MeterName] = bill.Totals[MeterName] || {};
-      bill.Totals[MeterName].Total = ConsumedQuantity;
-      bill.Totals[MeterName].Cost = Cost;
+      bill.Totals[ItemName] = bill.Totals[ItemName] || {};
+      bill.Totals[ItemName].Total = ConsumedQuantity;
+      bill.Totals[ItemName].Cost = Cost;
     });
   },
   calculateReport = function (bill) {
@@ -134,7 +134,7 @@ var path = require('path'),
 
     var InstanceId = "",
       AggregateCost = 0,
-      MeterName = "",
+      ItemName = "",
       ConsumedQuantity = 0,
       TotalQuantity = 0,
       TotalCost = 0,
@@ -146,15 +146,15 @@ var path = require('path'),
         console.log("Charges for " + InstanceId);
         AggregateCost = 0;
 
-        for (MeterName in bill.Subtotals[InstanceId]) {
-          if (bill.Subtotals[InstanceId].hasOwnProperty(MeterName)) {
-            ConsumedQuantity = bill.Subtotals[InstanceId][MeterName];
-            TotalQuantity = bill.Totals[MeterName].AggregateTotal;
-            TotalCost = bill.Totals[MeterName].Cost;
+        for (ItemName in bill.Subtotals[InstanceId]) {
+          if (bill.Subtotals[InstanceId].hasOwnProperty(ItemName)) {
+            ConsumedQuantity = bill.Subtotals[InstanceId][ItemName];
+            TotalQuantity = bill.Totals[ItemName].AggregateTotal;
+            TotalCost = bill.Totals[ItemName].Cost;
             Cost = TotalCost * (ConsumedQuantity / TotalQuantity);
             AggregateCost += Cost;
 
-            console.log("    " + MeterName + " @ " + ConsumedQuantity + "/" + TotalQuantity + " = " + formatDollars(Cost) + " (of " + formatDollars(TotalCost) + ")");
+            console.log("    " + ItemName + " @ " + ConsumedQuantity + "/" + TotalQuantity + " = " + formatDollars(Cost) + " (of " + formatDollars(TotalCost) + ")");
           }
         }
 
