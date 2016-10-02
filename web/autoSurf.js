@@ -153,14 +153,23 @@ var http = require('http'),
 
         return list.sort();
     },
+    //
+    // Downloads all input urls that match pattern. If
+    // filename is specified, it saves to that filename
+    // (you can use {1} notation to use capture groups
+    // from the pattern). If filename is not specified,
+    // the name of the file in the url is used. If
+    // directory is specified, file is stored there,
+    // otherwise in the current directory.
+    //
     //  {
     //    "operation": "download",
     //    "input": [url, ...],
-    //    "pattern": ".*\/([^\/]+)\/([^\/]+)"
-    //    "filename": "{1}"
-    //    "directory": "{0}"
-    //    "output": [url, ...] - that failed to download
+    //    "pattern": "^.*/([^/]+)/([^/]+)$"
+    //    "directory": "{1}"
+    //    "filename": "{2}"
     //  }
+    //  outputs input urls that failed to download
     //
     operationDownload = function (operation, callback) {
         "use strict";
@@ -222,6 +231,11 @@ var http = require('http'),
         downloads = operation.input.length;
         operation.input.forEach(startDownload);
     },
+    //
+    // Downloads all the input urls and parses the HTML for
+    // urls in <a>, <img>, <iframe> and <meta> tags and
+    // adds them to output.
+    //
     //  {
     //    "operation": "parse",
     //    "input": [url, ...],
@@ -259,11 +273,16 @@ var http = require('http'),
         pages = operation.input.length;
         operation.input.forEach(startFetch);
     },
+    //
+    // Copies all input urls that match the include
+    // pattern but do not match the exclude pattern to
+    // output.
+    //
     //  {
     //    "operation": "filter",
     //    "input": [url, ...],
-    //    "include": "text1"
-    //    "exclude": "text2"
+    //    "include": "^.*text1.*$",
+    //    "exclude": "^.*text2.*$",
     //    "output": [url, ...] - urls that contained text1 but not text2
     //  }
     //
@@ -345,11 +364,20 @@ var http = require('http'),
             callback(operation);
         });
     },
+    //
+    // Copies input to output. If inputFilename is
+    // specified, reads JSON array of strings and appends
+    // to output. If outputFilename is specified, prunes
+    // duplicates out of output and writes JSON array.
+    //
     //  {
     //    "operation": "IO",
     //    "input": [url, ...],
+    //      - optional, if provided it is appended to output of previous operation
     //    "inputFilename": "{1}"
+    //      - optional
     //    "outputFilename": "{1}"
+    //      - optional
     //    "output": [url, ...] - all the urls from input and inputFilename
     //  }
     //
