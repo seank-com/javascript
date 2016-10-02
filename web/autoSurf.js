@@ -437,6 +437,7 @@ var http = require('http'),
 
             if (operation.outputFilename) {
               filename = path.resolve('.', operation.outputFilename);
+              data = JSON.stringify(operation.output, null, "  ");
               fs.writeFile(filename, data, processWrite);
             } else {
               process.nextTick(function () {
@@ -449,7 +450,6 @@ var http = require('http'),
               names = [],
               i = 0;
 
-                    data = JSON.stringify(pruneDuplicates(operation.output));
             if (err && err.code !== 'ENOENT') {
               console.log(err);
             } else {
