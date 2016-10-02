@@ -12,6 +12,9 @@ var http = require('http'),
     url = require('url'),
     htmlparser = require('htmlparser2'), // npm install htmlparser2 -g
     async = require('async'), //npm install async -g
+    dbg = function() {
+      //console.log.apply({}, arguments);
+    },
     downloadFile = function (uri, filename, callback) {
         "use strict";
 
@@ -473,6 +476,7 @@ var http = require('http'),
                         doNextOperation(null);
                     });
                 }
+            dbg("DBG: Loaded operations", operations);
             });
         }
     },
@@ -495,6 +499,7 @@ if (!String.prototype.format) {
             return result;
         });
     };
+  dbg("DBG: defined format");
 }
 
 main(argc, argv);
