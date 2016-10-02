@@ -133,26 +133,6 @@ var http = require('http'),
             }
         });
     },
-    pruneDuplicates = function (list) {
-        "use strict";
-
-        var count = list.length,
-            i = 0,
-            map = {};
-
-        for (i = 0; i < count; i += 1) {
-            map[list[i]] = true;
-        }
-
-        list = [];
-        for (i in map) {
-            if (map.hasOwnProperty(i)) {
-                list.push(i);
-            }
-        }
-
-        return list.sort();
-    },
     //
     // Downloads all input urls that match pattern. If
     // filename is specified, it saves to that filename
@@ -172,16 +152,13 @@ var http = require('http'),
     //  outputs input urls that failed to download
     //
     operationDownload = function (operation, callback) {
-        var downloads = 0,
-                    operation.output.push(result.url);
-                    filename = operation.filename.format(matches);
-                    directory = operation.directory.format(matches);
-        downloads = operation.input.length;
-        operation.input.forEach(startDownload);
       "use strict";
 
+      var inputNames = Object.getOwnPropertyNames(operation.input),
+        downloads = inputNames.length,
         processDownload = function (err, result) {
           if (err) {
+            operation.output[result.url] = operation.input[result.url];
             console.log('ERROR downloading: ' + result.url + '\n          message: ' + err.message);
           } else {
             console.log('Downloaded (' + downloads + ' remaining): ' + result.url);
@@ -194,6 +171,7 @@ var http = require('http'),
         startDownload = function (element) {
           var re = new RegExp("^(.*)$"),
               matches = [],
+              tags = {},
               filename = '',
               directory = path.resolve('.', '.');
 
@@ -206,13 +184,16 @@ var http = require('http'),
           }
 
           matches = element.match(re);
+          tags = operation.input[element];
 
           if (operation.filename) {
+            filename = operation.filename.format(matches, tags);
           } else {
             filename = element.substr(element.lastIndexOf('/') + 1);
           }
 
           if (operation.directory) {
+            directory = operation.directory.format(matches, tags);
           }
 
           filename = path.resolve(directory, filename);
@@ -224,6 +205,7 @@ var http = require('http'),
             downloadFile(element, filename, processDownload);
           }
         };
+      inputNames.forEach(startDownload);
     },
     //
     // Downloads all the input urls and parses the HTML for
@@ -239,14 +221,17 @@ var http = require('http'),
     operationParse = function (operation, callback) {
         "use strict";
 
-        var pages = 0,
+        var inputNames = Object.getOwnPropertyNames(operation.input),
+          pages = inputNames.length,
           processPage = function (err, result) {
+            var i, source = operation.input[result.sourceUrl] || {};
 
-                    operation.output = operation.output.concat(result.urlsFound);
-                        console.log(pruneDuplicates(operation.output));
             if (err) {
               console.log('ERROR parsing: ' + result.sourceUrl + '\n      message: ' + err.message);
             } else {
+              for (i = 0; i < result.urlsFound.length; i += 1) {
+                operation.output[result.urlsFound[i]] = Object.assign({}, source);
+              }
               console.log('Parsed (' + pages + ' remaining): ' + result.sourceUrl);
             }
 
@@ -254,6 +239,7 @@ var http = require('http'),
 
             if (pages === 0) {
               if (operation.debug) {
+                console.log(operation.output);
               }
               callback(operation);
             }
@@ -262,8 +248,7 @@ var http = require('http'),
             parseHtml(element, processPage);
           };
 
-        pages = operation.input.length;
-        operation.input.forEach(startFetch);
+        inputNames.forEach(startFetch);
     },
     //
     // Copies all input urls that match the include
@@ -281,7 +266,8 @@ var http = require('http'),
     operationFilter = function (operation, callback) {
         "use strict";
 
-        var re = {};
+        var inputNames = Object.getOwnPropertyNames(operation.input),
+          re = {}, i, outputNames = [];
 
         if (operation.include) {
             if (operation.include[0] !== '^' || operation.include[operation.include.length - 1] !== '$') {
@@ -291,11 +277,11 @@ var http = require('http'),
 
             re = new RegExp(operation.include);
 
-            operation.output = operation.input.filter(function (item) {
+            outputNames = inputNames.filter(function (item) {
                 return re.test(item);
             });
         } else {
-            operation.output = operation.input;
+          outputNames = inputNames;
         }
 
         if (operation.exclude) {
@@ -306,9 +292,13 @@ var http = require('http'),
 
             re = new RegExp(operation.exclude);
 
-            operation.output = operation.output.filter(function (item) {
+            outputNames = outputNames.filter(function (item) {
                 return !re.test(item);
             });
+        }
+
+        for (i = 0; i < outputNames.length; i += 1) {
+          operation.output[outputNames[i]] = operation.input[outputNames[i]];
         }
 
         if (operation.debug) {
@@ -318,6 +308,61 @@ var http = require('http'),
         process.nextTick(function () {
             callback(operation);
         });
+    },
+    //
+    // Copies all input urls to output. Adds tags that
+    // match the specified pattern.
+    //
+    // {
+    //   "operation": "tag",
+    //   "input": [url, ...],
+    //   "pattern": "^.*/([0-9]+)/([0-9]+)/([0-9]+)/.*$)",
+    //   "tags": {
+    //     "day":"{1}",
+    //     "month": "{2}",
+    //     "year": "{3}"
+    //   },
+    //   "output": [url, ...] - all input urls
+    // },
+    //
+    operationTag = function (operation, callback) {
+      "use strict";
+
+      var inputNames = Object.getOwnPropertyNames(operation.input),
+        updateTags = function (element) {
+
+          var re,
+            i = 0,
+            matches = [],
+            tags = operation.input[element] || {},
+            tagNames = Object.getOwnPropertyNames(operation.tags);
+
+          if (operation.pattern) {
+            if (operation.pattern[0] !== '^' || operation.pattern[operation.pattern.length - 1] !== '$') {
+              console.log('ERROR: pattern must begin with ^ and end with $');
+              return;
+            }
+
+            re = new RegExp(operation.pattern);
+
+            matches = element.match(re);
+            for (i = 0; i < tagNames.length; i += 1) {
+              tags[tagNames[i]] = operation.tags[tagNames[i]].format(matches, tags);
+            }
+            operation.output[element] = tags;
+          }
+        };
+      operation.tags = operation.tags || {};
+      operation.output = operation.input;
+      inputNames.forEach(updateTags);
+
+      if (operation.debug) {
+        console.log(operation.output);
+      }
+
+      process.nextTick(function () {
+        callback(operation);
+      });
     },
     //
     // Generates urls for each pattern in patterns
@@ -335,12 +380,8 @@ var http = require('http'),
     //  }
     //
     operationGenerate = function (operation, callback) {
-            value = 0;
-                operation.output.push(operation.patterns[i].format(value));
       "use strict";
 
-        if (operation.debug) {
-            console.log(pruneDuplicates(operation.output));
       var patterns = operation.patterns || [],
         count = patterns.length,
         start = operation.start || 0,
@@ -348,11 +389,14 @@ var http = require('http'),
         end = operation.end || 0,
         i = 0,
         value = 0,
+        entry = "";
 
       operation.output = operation.input;
 
       for (i = 0; i < count; i += 1) {
         for (value = start; value <= end; value += increment) {
+          entry = operation.patterns[i].format(value);
+          operation.output[entry] = operation.output[entry] || {};
         }
       }
 
@@ -402,26 +446,29 @@ var http = require('http'),
           },
           processRead = function (err, data) {
             var loaded = {},
+              names = [],
               i = 0;
 
                     data = JSON.stringify(pruneDuplicates(operation.output));
-                    count = 0,
-                        count = loaded.length;
-                        for(i = 0; i < count; i += 1) {
-                            operation.output.push(loaded[i]);
-                        }
-                    }
-
             if (err && err.code !== 'ENOENT') {
               console.log(err);
             } else {
               if (!err) {
                 loaded = JSON.parse(data);
 
+                if (Array.isArray(loaded)) {
+                  names = loaded;
+                  loaded = {};
+                } else if (typeof loaded === "object" && loaded !== null) {
+                  names = Object.getOwnPropertyNames(loaded);
                 }
 
+                for(i = 0; i < names.length; i += 1) {
+                  operation.output[names[i]] = loaded[names[i]] || {};
                 }
+              }
               saveFile();
+            }
           },
           loadFile = function() {
             var filename = '';
@@ -431,6 +478,7 @@ var http = require('http'),
               fs.readFile(filename, { 'encoding': "utf8" }, processRead);
             } else {
               saveFile();
+            }
           };
         operation.output = operation.input;
         loadFile();
@@ -439,27 +487,28 @@ var http = require('http'),
     doNextOperation = function (operation) {
       "use strict";
 
-        var nextOperation = operations.pop(),
-            input = [];
+      var i,
+        nextOperation = operations.pop(),
+        input = {};
 
-            input = pruneDuplicates(operation.output);
       if (operation) {
+        input = operation.output;
       }
 
-            if (nextOperation.input && nextOperation.input.length > 0) {
-                input = input.concat(nextOperation.input);
-            }
-            nextOperation.output = nextOperation.output || [];
-            nextOperation.output = nextOperation.output || [];
-            }
-        } else {
-            if (input.length > 0) {
-                console.log(input);
       if (nextOperation) {
+        if (nextOperation.input) {
+          if (Array.isArray(nextOperation.input) && nextOperation.input.length > 0) {
+            for (i = 0; i < nextOperation.input.length; i += 1) {
+              input[nextOperation.input[i]] = input[nextOperation.input[i]] || {};
             }
+          } else if (typeof nextOperation.input !== "object" || nextOperation.input === null) {
+            console.log('ERROR: input must be an array or object');
+            return;
+          }
         }
 
         nextOperation.input = input;
+        nextOperation.output = nextOperation.output || {};
         nextOperation.operation = nextOperation.operation || '';
         nextOperation.debug = nextOperation.debug || false;
 
@@ -482,6 +531,19 @@ var http = require('http'),
         case 'IO':
           operationIO(nextOperation, doNextOperation);
           break;
+        default:
+          process.nextTick(function () {
+            nextOperation.output = nextOperation.input;
+            console.log("Skipping ", nextOperation.operation);
+            doNextOperation(nextOperation);
+          });
+          break;
+        }
+      } else {
+        if (Object.getOwnPropertyNames(input).length > 0) {
+          console.log(input);
+        }
+      }
     },
     main = function (argc, argv) {
       "use strict";
@@ -498,7 +560,7 @@ var http = require('http'),
             process.nextTick(function () {
                 doNextOperation(null);
             });
-        }
+          }
         });
       }
     },
@@ -506,21 +568,15 @@ var http = require('http'),
     argc = argv.length;
 
 if (!String.prototype.format) {
-    String.prototype.format = function () {
-        "use strict";
+  String.prototype.format = function (matches, tags) {
+    "use strict";
 
-        var args = arguments;
-
-        // If we are passed an array then just use that.
-        if (args.length === 1 && typeof args[0] === "object") {
-            args = args[0] || [];
-        }
-
-        return this.replace(/\{(\d+)\}/g, function (match, number) {
-            var result = args[number] || match;
-            return result;
-        });
-    };
+    return this.replace(/\{(\d+)\}/g, function (match, number) {
+      return matches[number] || match;
+    }).replace(/\{(\w+)\}/g, function (match, tag) {
+      return tags[tag] || match;
+    });
+  };
   dbg("DBG: defined format");
 }
 
