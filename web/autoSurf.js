@@ -236,9 +236,7 @@ var http = require('http'),
 
           if (operation.pattern) {
             if (operation.pattern[0] !== '^' || operation.pattern[operation.pattern.length - 1] !== '$') {
-              process.nextTick(function () {
-                workCallback(new Error('ERROR: pattern must begin with ^ and end with $'));
-              });
+              workCallback(new Error('ERROR: pattern must begin with ^ and end with $'));
               return;
             }
             re = new RegExp(operation.pattern);
@@ -262,6 +260,10 @@ var http = require('http'),
           if (operation.debug) {
             console.log('directory: ' + directory);
             console.log('filename : ' + filename);
+            operation.output[element] = operation.input[element];
+            operation.output[element]['directory'] = directory;
+            operation.output[element]['filename'] = filename;
+            workCallback(null);
           } else {
             downloadFile(element, filename, function (err, result) {
               if (err) {
