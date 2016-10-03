@@ -7,6 +7,7 @@
 // to fetch, parse and download data from the web.
 //
 var http = require('http'),
+    https = require('https'),
     path = require('path'),
     fs = require('fs'),
     url = require('url'),
@@ -42,8 +43,12 @@ var http = require('http'),
                 if (err && err.code !== 'EEXIST') {
                     callback(err, {'url': uri});
                 } else {
+                  if (url.parse(uri).protocol === "https:") {
+                    req = https.get(uri, downloadStart);
+                  } else {
                     req = http.get(uri, downloadStart);
-                    req.on('error', downloadError);
+                  }
+                  req.on('error', downloadError);
                 }
             },
             directory = path.dirname(filename);
@@ -53,8 +58,8 @@ var http = require('http'),
     getHTML = function (uri, callback) {
         "use strict";
 
-        var req = http.get(uri, function (res) {
-
+        var req = {},
+          processHTML = function (res) {
             var output = '';
 
             res.setEncoding('utf8');
@@ -68,7 +73,14 @@ var http = require('http'),
 
                 callback(null, { 'status': res.statusCode, 'text': output });
             });
-        });
+          };
+
+        if (url.parse(uri).protocol === "https:") {
+          req = https.get(uri, processHTML);
+        } else {
+          req = http.get(uri, processHTML);
+        }
+
         req.on('error', function (err) {
             callback(err, null);
         });
