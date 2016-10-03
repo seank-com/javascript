@@ -19,7 +19,7 @@ var http = require('http'),
         "use strict";
 
         var downloadError = function (err) {
-                callback(err.message, {'url': uri});
+                callback(err, {'url': uri});
             },
             downloadStart = function (res) {
 
@@ -40,7 +40,7 @@ var http = require('http'),
                 var req = {};
 
                 if (err && err.code !== 'EEXIST') {
-                    callback(err.code, {'url': uri});
+                    callback(err, {'url': uri});
                 } else {
                     req = http.get(uri, downloadStart);
                     req.on('error', downloadError);
@@ -70,7 +70,7 @@ var http = require('http'),
             });
         });
         req.on('error', function (err) {
-            callback(err.message, null);
+            callback(err, null);
         });
     },
     parseHtml = function (sourceUrl, callback) {
@@ -113,7 +113,7 @@ var http = require('http'),
                 parser.end();
                 callback(null, { 'sourceUrl': sourceUrl, 'urlsFound': results });
             } else {
-                callback(response.status, { 'sourceUrl': sourceUrl });
+                callback(new Error("HTTP status error " + response.status), { 'sourceUrl': sourceUrl });
             }
         });
     },
@@ -132,6 +132,66 @@ var http = require('http'),
                 callback(null, result);
             }
         });
+    },
+    batchWork = function (batchMax, operation, worker, callback) {
+      "use strict";
+
+      var elements = Object.getOwnPropertyNames(operation.input),
+        count = elements.length,
+        batchSize = 0,
+        fail = null,
+        workCallback = function (err) {
+          batchSize -= 1;
+          if (err && !fail) {
+            dbg("DBG: worker Failed ", err);
+            fail = err;
+          }
+          if (batchSize < 1) {
+            if (fail) {
+              dbg("DBG: propagate failure ", fail);
+              callback(fail, operation);
+            } else if (elements.length < 1) {
+              dbg("DBG: all ", count, " workers complete");
+              callback(null, operation);
+            } else {
+              dbg("DBG: queueing more work");
+              processBatch();
+            }
+          }
+        },
+        queueWork = function(element) {
+          process.nextTick(function () {
+            dbg("DBG: working ", element);
+            worker(element, workCallback);
+          });
+        },
+        processBatch = function () {
+          var element = "";
+          while(elements.length > 0) {
+            element = elements.pop();
+            if (element) {
+              batchSize += 1;
+              dbg("DBG: queueing ", element, "(", batchSize, " batchSize)");
+              queueWork(element);
+
+              if (batchSize >= batchMax) {
+                dbg("DBG: yielding");
+                return;
+              }
+            }
+          }
+        };
+
+        process.nextTick(function () {
+          if (count > 0) {
+            dbg("DBG: batching ", count, " jobs");
+            processBatch();
+          } else {
+            dbg("DBG: nothing to do");
+            callback(null, operation);
+          }
+        });
+        return count;
     },
     //
     // Downloads all input urls that match pattern. If
@@ -154,21 +214,8 @@ var http = require('http'),
     operationDownload = function (operation, callback) {
       "use strict";
 
-      var inputNames = Object.getOwnPropertyNames(operation.input),
-        downloads = inputNames.length,
-        processDownload = function (err, result) {
-          if (err) {
-            operation.output[result.url] = operation.input[result.url];
-            console.log('ERROR downloading: ' + result.url + '\n          message: ' + err.message);
-          } else {
-            console.log('Downloaded (' + downloads + ' remaining): ' + result.url);
-          }
-          downloads -= 1;
-          if (downloads === 0) {
-            callback(operation);
-          }
-        },
-        startDownload = function (element) {
+      var downloads = 0,
+        downloadWorker = function (element, workCallback) {
           var re = new RegExp("^(.*)$"),
               matches = [],
               tags = {},
@@ -177,7 +224,9 @@ var http = require('http'),
 
           if (operation.pattern) {
             if (operation.pattern[0] !== '^' || operation.pattern[operation.pattern.length - 1] !== '$') {
-              console.log('ERROR: pattern must begin with ^ and end with $');
+              process.nextTick(function () {
+                workCallback(new Error('ERROR: pattern must begin with ^ and end with $'));
+              });
               return;
             }
             re = new RegExp(operation.pattern);
@@ -202,10 +251,20 @@ var http = require('http'),
             console.log('directory: ' + directory);
             console.log('filename : ' + filename);
           } else {
-            downloadFile(element, filename, processDownload);
+            downloadFile(element, filename, function (err, result) {
+              if (err) {
+                operation.output[result.url] = operation.input[result.url];
+                console.log('ERROR downloading: ' + result.url + '\n          message: ' + err.message);
+              } else {
+                console.log('Downloaded (' + downloads + ' remaining): ' + result.url);
+              }
+              downloads -= 1;
+              workCallback(null);
+            });
           }
         };
-      inputNames.forEach(startDownload);
+
+        downloads = batchWork(20, operation, downloadWorker, callback);
     },
     //
     // Downloads all the input urls and parses the HTML for
@@ -221,34 +280,30 @@ var http = require('http'),
     operationParse = function (operation, callback) {
         "use strict";
 
-        var inputNames = Object.getOwnPropertyNames(operation.input),
-          pages = inputNames.length,
-          processPage = function (err, result) {
-            var i, source = operation.input[result.sourceUrl] || {};
+        var pages = 0,
+          parseWorker = function (element, workCallback) {
+            parseHtml(element, function (err, result) {
+              var i, source = operation.input[result.sourceUrl] || {};
 
-            if (err) {
-              console.log('ERROR parsing: ' + result.sourceUrl + '\n      message: ' + err.message);
-            } else {
-              for (i = 0; i < result.urlsFound.length; i += 1) {
-                operation.output[result.urlsFound[i]] = Object.assign({}, source);
+              if (err) {
+                console.log('ERROR parsing: ' + result.sourceUrl + '\n      message: ' + err.message);
+              } else {
+                for (i = 0; i < result.urlsFound.length; i += 1) {
+                  operation.output[result.urlsFound[i]] = Object.assign({}, source);
+                }
+                console.log('Parsed (' + pages + ' remaining): ' + result.sourceUrl);
               }
-              console.log('Parsed (' + pages + ' remaining): ' + result.sourceUrl);
-            }
 
-            pages -= 1;
-
-            if (pages === 0) {
-              if (operation.debug) {
-                console.log(operation.output);
+              pages -= 1;
+              if (pages === 0) {
+                if (operation.debug) {
+                  console.log(operation.output);
+                }
               }
-              callback(operation);
-            }
-          },
-          startFetch = function (element) {
-            parseHtml(element, processPage);
+              workCallback(null);
+            });
           };
-
-        inputNames.forEach(startFetch);
+        pages = batchWork(20, operation, parseWorker, callback);
     },
     //
     // Copies all input urls that match the include
@@ -306,7 +361,7 @@ var http = require('http'),
         }
 
         process.nextTick(function () {
-            callback(operation);
+            callback(null, operation);
         });
     },
     //
@@ -361,7 +416,7 @@ var http = require('http'),
       }
 
       process.nextTick(function () {
-        callback(operation);
+        callback(null, operation);
       });
     },
     //
@@ -401,7 +456,7 @@ var http = require('http'),
       }
 
       process.nextTick(function () {
-        callback(operation);
+        callback(null, operation);
       });
     },
     //
@@ -428,7 +483,7 @@ var http = require('http'),
             if (err) {
               console.log(err);
             } else {
-              callback(operation);
+              callback(null, operation);
             }
           },
           saveFile = function() {
@@ -441,7 +496,7 @@ var http = require('http'),
               fs.writeFile(filename, data, processWrite);
             } else {
               process.nextTick(function () {
-                callback(operation);
+                callback(null, operation);
               });
             }
           },
@@ -484,64 +539,70 @@ var http = require('http'),
         loadFile();
     },
     operations = [],
-    doNextOperation = function (operation) {
+    doNextOperation = function (err, operation) {
       "use strict";
 
       var i,
-        nextOperation = operations.pop(),
+        nextOperation = {},
         input = {};
 
-      if (operation) {
-        input = operation.output;
-      }
-
-      if (nextOperation) {
-        if (nextOperation.input) {
-          if (Array.isArray(nextOperation.input) && nextOperation.input.length > 0) {
-            for (i = 0; i < nextOperation.input.length; i += 1) {
-              input[nextOperation.input[i]] = input[nextOperation.input[i]] || {};
-            }
-          } else if (typeof nextOperation.input !== "object" || nextOperation.input === null) {
-            console.log('ERROR: input must be an array or object');
-            return;
-          }
-        }
-
-        nextOperation.input = input;
-        nextOperation.output = nextOperation.output || {};
-        nextOperation.operation = nextOperation.operation || '';
-        nextOperation.debug = nextOperation.debug || false;
-
-        switch (nextOperation.operation) {
-        case 'download':
-          operationDownload(nextOperation, doNextOperation);
-          break;
-        case 'parse':
-          operationParse(nextOperation, doNextOperation);
-          break;
-        case 'filter':
-          operationFilter(nextOperation, doNextOperation);
-          break;
-        case 'tag':
-          operationTag(nextOperation, doNextOperation);
-          break;
-        case 'generate':
-          operationGenerate(nextOperation, doNextOperation);
-          break;
-        case 'IO':
-          operationIO(nextOperation, doNextOperation);
-          break;
-        default:
-          process.nextTick(function () {
-            nextOperation.output = nextOperation.input;
-            console.log("Skipping ", nextOperation.operation);
-            doNextOperation(nextOperation);
-          });
-          break;
-        }
+      if (err) {
+        console.log("ERROR: ", err.message, err);
       } else {
-        if (Object.getOwnPropertyNames(input).length > 0) {
-          console.log(input);
+        nextOperation = operations.pop();
+
+        if (operation) {
+          input = operation.output;
+        }
+
+        if (nextOperation) {
+          if (nextOperation.input) {
+            if (Array.isArray(nextOperation.input) && nextOperation.input.length > 0) {
+              for (i = 0; i < nextOperation.input.length; i += 1) {
+                input[nextOperation.input[i]] = input[nextOperation.input[i]] || {};
+              }
+            } else if (typeof nextOperation.input !== "object" || nextOperation.input === null) {
+              console.log('ERROR: input must be an array or object');
+              return;
+            }
+          }
+
+          nextOperation.input = input;
+          nextOperation.output = nextOperation.output || {};
+          nextOperation.operation = nextOperation.operation || '';
+          nextOperation.debug = nextOperation.debug || false;
+
+          switch (nextOperation.operation) {
+          case 'download':
+            operationDownload(nextOperation, doNextOperation);
+            break;
+          case 'parse':
+            operationParse(nextOperation, doNextOperation);
+            break;
+          case 'filter':
+            operationFilter(nextOperation, doNextOperation);
+            break;
+          case 'tag':
+            operationTag(nextOperation, doNextOperation);
+            break;
+          case 'generate':
+            operationGenerate(nextOperation, doNextOperation);
+            break;
+          case 'IO':
+            operationIO(nextOperation, doNextOperation);
+            break;
+          default:
+            process.nextTick(function () {
+              nextOperation.output = nextOperation.input;
+              console.log("Skipping ", nextOperation.operation);
+              doNextOperation(null, nextOperation);
+            });
+            break;
+          }
+        } else {
+          //if (Object.getOwnPropertyNames(input).length > 0) {
+          //  console.log(input);
+          //}
         }
       }
     },
@@ -558,7 +619,7 @@ var http = require('http'),
             operations = result.reverse();
             dbg("DBG: Loaded operations", operations);
             process.nextTick(function () {
-                doNextOperation(null);
+                doNextOperation(null, null);
             });
           }
         });
