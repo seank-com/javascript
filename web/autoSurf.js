@@ -471,10 +471,9 @@ var http = require('http'),
     });
   },
   //
-  // Copies input to output. If inputFilename is
-  // specified, reads JSON array of strings and appends
-  // to output. If outputFilename is specified, prunes
-  // duplicates out of output and writes JSON array.
+  // Copies input to output. If inputFilename is specified,
+  // reads JSON array of strings and appends to output. If
+  // outputFilename is specified, writes output as JSON.
   //
   //  {
   //    "operation": "IO",
@@ -484,7 +483,10 @@ var http = require('http'),
   //      - optional
   //    "outputFilename": "{1}"
   //      - optional
-  //    "output": [url, ...] - all the urls from input and inputFilename
+  //    "padding": "  "
+  //      - optional, if provided formats json using
+  //        specified padding, otherwise json will have
+  //        minimal whitespace
   //  }
   //
   operationIO = function (operation, callback) {
@@ -503,7 +505,11 @@ var http = require('http'),
 
         if (operation.outputFilename) {
           filename = path.resolve('.', operation.outputFilename);
-          data = JSON.stringify(operation.output, null, "  ");
+          if (operation.padding) {
+            data = JSON.stringify(operation.output, null, operation.padding);
+          } else {
+            data = JSON.stringify(operation.output);
+          }
           fs.writeFile(filename, data, processWrite);
         } else {
           process.nextTick(function () {
