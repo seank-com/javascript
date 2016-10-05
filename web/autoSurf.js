@@ -17,6 +17,24 @@ var http = require('http'),
     "use strict";
     console.log.apply({}, arguments);
   },
+  mkdirp = function (directory, callback) {
+    fs.mkdir(directory, function(err1) {
+      if (err1) {
+        if (err1.code === 'EEXIST') {
+          callback(null);
+        } else if (err1.code === 'ENOENT') {
+          mkdirp(path.dirname(directory), function(err2) {
+            if (err2) callback(err2);
+            else mkdirp(directory, callback);
+          })
+        } else {
+          callback(err1);
+        }
+      } else {
+        callback(null);
+      }
+    })
+  },
   downloadFile = function (uri, filename, callback) {
     "use strict";
 
@@ -51,8 +69,7 @@ var http = require('http'),
         }
       },
       directory = path.dirname(filename);
-
-    fs.mkdir(directory, directoryReady);
+    mkdirp(directory, directoryReady);
   },
   getHTML = function (uri, callback) {
     "use strict";
