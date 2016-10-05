@@ -373,7 +373,9 @@ var http = require('http'),
     var inputNames = Object.getOwnPropertyNames(operation.input),
       re = {},
       i = 0,
-      outputNames = [];
+      j = 0,
+      outputNames = [],
+      name = "";
 
     if (operation.include) {
       if (operation.include[0] !== '^' || operation.include[operation.include.length - 1] !== '$') {
@@ -405,6 +407,15 @@ var http = require('http'),
 
     for (i = 0; i < outputNames.length; i += 1) {
       operation.output[outputNames[i]] = operation.input[outputNames[i]];
+      name = outputNames[i];
+      if (operation.prune) {
+        j = name.indexOf(operation.prune);
+        if (j >= 0) {
+          name = name.substring(0, j);
+        }
+      }
+      operation.output[name] = operation.input[outputNames[i]];
+
     }
 
     if (operation.debug) {
