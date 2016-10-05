@@ -218,7 +218,9 @@ var http = require('http'),
     return count;
   },
   //
-  // Downloads all input urls that match pattern. If
+  // Downloads all input urls. If pattern is specified,
+  // then it is applied against the url so the capture
+  // groups can be used with filename and directory. If
   // filename is specified, it saves to that filename
   // (you can use {1} notation to use capture groups
   // from the pattern). If filename is not specified,
@@ -226,14 +228,20 @@ var http = require('http'),
   // directory is specified, file is stored there,
   // otherwise in the current directory.
   //
+  // The output contains any input urls that failed to
+  // download.
+  //
   //  {
   //    "operation": "download",
   //    "input": [url, ...],
+  //      - optional, if provided it is appended to output of previous operation
   //    "pattern": "^.*/([^/]+)/([^/]+)$"
+  //      - optional
   //    "directory": "{1}"
+  //      - optional
   //    "filename": "{2}"
+  //      - optional
   //  }
-  //  outputs input urls that failed to download
   //
   operationDownload = function (operation, callback) {
     "use strict";
@@ -295,12 +303,19 @@ var http = require('http'),
   //
   // Downloads all the input urls and parses the HTML for
   // urls in <a>, <img>, <iframe> and <meta> tags and
-  // adds them to output.
+  // adds them to output. If annotate is specified, appends
+  // the annotation pattern and the input url to the
+  // resulting url to disambiguate duplicates.
+  //
+  // The output contains urls found from downloading and
+  // parsing the input urls.
   //
   //  {
   //    "operation": "parse",
   //    "input": [url, ...],
-  //    "output": [url, ...] - urls found from downloading and parsing the input urls
+  //      - optional, if provided it is appended to output of previous operation
+  //    "annotate": "#####"
+  //     - optional
   //  }
   //
   operationParse = function (operation, callback) {
@@ -334,14 +349,22 @@ var http = require('http'),
   //
   // Copies all input urls that match the include
   // pattern but do not match the exclude pattern to
-  // output.
+  // output. If prune is specified, then prunes everything
+  // after and including the specified annotation pattern.
+  //
+  // The output contains any pruned input urls that are
+  // included but not excluded.
   //
   //  {
   //    "operation": "filter",
   //    "input": [url, ...],
+  //      - optional, if provided it is appended to output of previous operation
   //    "include": "^.*text1.*$",
+  //     - optional
   //    "exclude": "^.*text2.*$",
-  //    "output": [url, ...] - urls that contained text1 but not text2
+  //     - optional
+  //    "prune": "####",
+  //     - optional
   //  }
   //
   operationFilter = function (operation, callback) {
@@ -399,13 +422,15 @@ var http = require('http'),
   // {
   //   "operation": "tag",
   //   "input": [url, ...],
+  //      - optional, if provided it is appended to output of previous operation
   //   "pattern": "^.*/([0-9]+)/([0-9]+)/([0-9]+)/.*$)",
+  //      - optional
   //   "tags": {
   //     "day":"{1}",
   //     "month": "{2}",
   //     "year": "{3}"
-  //   },
-  //   "output": [url, ...] - all input urls
+  //   }
+  //      - optional
   // },
   //
   operationTag = function (operation, callback) {
