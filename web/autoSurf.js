@@ -324,13 +324,17 @@ var http = require('http'),
     var pages = 0,
       parseWorker = function (element, workCallback) {
         parseHtml(element, function (err, result) {
-          var i, source = operation.input[result.sourceUrl] || {};
+          var i, source = operation.input[result.sourceUrl] || {}, uri;
 
           if (err) {
             console.log('ERROR parsing: ' + result.sourceUrl + '\n      message: ' + err.message);
           } else {
             for (i = 0; i < result.urlsFound.length; i += 1) {
-              operation.output[result.urlsFound[i]] = Object.assign({}, source);
+              uri = result.urlsFound[i];
+              if (operation.annotate) {
+                uri += operation.annotate + result.sourceUrl;
+              }
+              operation.output[uri] = Object.assign({}, source);
             }
             console.log('Parsed (' + pages + ' remaining): ' + result.sourceUrl);
           }
