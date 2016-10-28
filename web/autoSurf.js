@@ -1,5 +1,5 @@
 /*jslint indent: 2, node: true */
-/*global require: false, process: false */
+/*global require: false, process: false, download: false, processBatch: false */
 
 // autoSurf.js
 //
@@ -18,54 +18,81 @@ var http = require('http'),
     console.log.apply({}, arguments);
   },
   mkdirp = function (directory, callback) {
-    fs.mkdir(directory, function(err1) {
+    "use strict";
+
+    fs.mkdir(directory, function (err1) {
       if (err1) {
         if (err1.code === 'EEXIST') {
           callback(null);
         } else if (err1.code === 'ENOENT') {
-          mkdirp(path.dirname(directory), function(err2) {
-            if (err2) callback(err2);
-            else mkdirp(directory, callback);
-          })
+          mkdirp(path.dirname(directory), function (err2) {
+            if (err2) {
+              callback(err2);
+            } else {
+              mkdirp(directory, callback);
+            }
+          });
         } else {
           callback(err1);
         }
       } else {
         callback(null);
       }
-    })
+    });
+  },
+  download = function (uri, callback) {
+    "use strict";
+
+    var downloadStarted = function (res) {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          callback(null, res);
+        } else {
+          if (res.statusCode >= 300 && res.statusCode < 400) {
+            if (res.headers.location) {
+              download(res.headers.location, callback);
+              return;
+            }
+          }
+          callback(new Error("Bad statusCode " + res.statusCode), null);
+        }
+      },
+      client = http,
+      req = {};
+
+    if (url.parse(uri).protocol === "https:") {
+      client = https;
+    }
+
+    req = client.get(uri, downloadStarted);
+    req.on('error', function (err) {
+      callback(err, null);
+    });
   },
   downloadFile = function (uri, filename, callback) {
     "use strict";
 
-    var downloadError = function (err) {
-        callback(err, {'url': uri});
-      },
-      downloadStart = function (res) {
+    var saveFile = function (err, res) {
+        var file = {};
 
-        // Don't create the file until we get the response.
-        var file = fs.createWriteStream(filename);
+        if (err) {
+          callback(err, {'url': uri});
+        } else {
+          file = fs.createWriteStream(filename);
 
-        res.on('data', function (chunk) {
-          file.write(chunk, 'binary');
-        });
-        res.on('end', function () {
-          file.end();
-          callback(null, { 'url': uri, 'filename': filename });
-        });
+          res.on('data', function (chunk) {
+            file.write(chunk, 'binary');
+          });
+          res.on('end', function () {
+            file.end();
+            callback(null, { 'url': uri, 'filename': filename });
+          });
+        }
       },
       directoryReady = function (err) {
-        var req = {};
-
         if (err && err.code !== 'EEXIST') {
           callback(err, {'url': uri});
         } else {
-          if (url.parse(uri).protocol === "https:") {
-            req = https.get(uri, downloadStart);
-          } else {
-            req = http.get(uri, downloadStart);
-          }
-          req.on('error', downloadError);
+          download(uri, saveFile);
         }
       },
       directory = path.dirname(filename);
@@ -74,30 +101,24 @@ var http = require('http'),
   getHTML = function (uri, callback) {
     "use strict";
 
-    var req = {},
-      processHTML = function (res) {
+    var processHTML = function (err, res) {
         var output = '';
 
-        res.setEncoding('utf8');
+        if (err) {
+          callback(err, {'url': uri});
+        } else {
+          res.setEncoding('utf8');
 
-        res.on('data', function (chunk) {
-          output += chunk;
-        });
+          res.on('data', function (chunk) {
+            output += chunk;
+          });
 
-        res.on('end', function () {
-          callback(null, { 'status': res.statusCode, 'text': output });
-        });
+          res.on('end', function () {
+            callback(null, { 'status': res.statusCode, 'text': output });
+          });
+        }
       };
-
-    if (url.parse(uri).protocol === "https:") {
-      req = https.get(uri, processHTML);
-    } else {
-      req = http.get(uri, processHTML);
-    }
-
-    req.on('error', function (err) {
-      callback(err, null);
-    });
+    download(uri, processHTML);
   },
   parseHtml = function (sourceUrl, callback) {
     "use strict";
@@ -133,12 +154,10 @@ var http = require('http'),
 
       if (err) {
         callback(err, { 'sourceUrl': sourceUrl });
-      } else if (response.status === 200) {
+      } else {
         parser.write(response.text);
         parser.end();
         callback(null, { 'sourceUrl': sourceUrl, 'urlsFound': results });
-      } else {
-        callback(new Error("HTTP status error " + response.status), { 'sourceUrl': sourceUrl });
       }
     });
   },
@@ -217,6 +236,30 @@ var http = require('http'),
     });
     return count;
   },
+  longestCommonSubstring = function (s1, s2) {
+    "use strict";
+
+    var LCS = [],
+      longest = 0,
+      i = 0,
+      j = 0,
+      result = "";
+
+    for (i = 0; i < s1.length; i += 1) {
+      LCS[i] = [];
+      for (j = 0; j < s2.length; j += 1) {
+        LCS[i][j] = 0;
+        if (s1[i] === s2[j]) {
+          LCS[i][j] = (i !== 0 && j !== 0) ? LCS[i - 1][j - 1] + 1 : 1;
+          if (LCS[i][j] > longest) {
+            longest = LCS[i][j];
+            result = s1.substring(i - longest + 1, i + 1);
+          }
+        }
+      }
+    }
+    return result;
+  },
   //
   // Downloads all input urls. If pattern is specified,
   // then it is applied against the url so the capture
@@ -285,6 +328,7 @@ var http = require('http'),
           operation.output[element].filename = filename;
           workCallback(null);
         } else {
+          dbg("DBG: Downloading ", element);
           downloadFile(element, filename, function (err, result) {
             if (err) {
               operation.output[result.url] = operation.input[result.url];
@@ -298,7 +342,7 @@ var http = require('http'),
         }
       };
 
-    downloads = batchWork(20, operation, downloadWorker, callback);
+    downloads = batchWork(4, operation, downloadWorker, callback);
   },
   //
   // Downloads all the input urls and parses the HTML for
@@ -408,9 +452,7 @@ var http = require('http'),
         return !re.test(item);
       });
     }
-
     for (i = 0; i < outputNames.length; i += 1) {
-      operation.output[outputNames[i]] = operation.input[outputNames[i]];
       name = outputNames[i];
       if (operation.prune) {
         j = name.indexOf(operation.prune);
@@ -419,7 +461,6 @@ var http = require('http'),
         }
       }
       operation.output[name] = operation.input[outputNames[i]];
-
     }
 
     if (operation.debug) {

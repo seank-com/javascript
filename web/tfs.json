@@ -1,0 +1,43 @@
+[
+  {
+    "operation": "-parse",
+    "-input": ["http://fourhourworkweek.com/podcast/"]
+  },
+  {
+    "operation": "-filter",
+    "include": "^.*fourhourworkweek.com/20.*$"
+  },
+  {
+    "operation": "-tag",
+    "pattern": "^.*/([0-9]+)/([0-9]+)/([0-9]+)/([^/]+)/$",
+    "tags": {
+      "year": "{1}",
+      "month": "{2}",
+      "day": "{3}",
+      "title": "{4}",
+      "source": "{0}"
+    }
+  },
+  {
+    "operation": "-parse",
+    "annotate": "####"
+  },
+  {
+    "operation": "-filter",
+    "include": "^.*mp3####.*$"
+  },
+  {
+    "operation": "IO",
+    "inputFilename": "wave.json"
+  },
+  {
+    "operation": "filter",
+    "prune": "####"
+  },
+  {
+    "operation": "download",
+    "pattern": "^.*/([^/]+)/([^/]+)$",
+    "directory": "TFS/{title}",
+    "filename": "TFS {year}-{month}-{day} {title} {2}"
+  }
+]
