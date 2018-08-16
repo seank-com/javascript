@@ -21,35 +21,47 @@ function processDirectory(dir) {
         file = '',
         map = [],
         i = 0,
+        onMac = process.platform === 'darwin',
         stat;
 
     for (i = 0; i < count; i += 1) {
-        file = files[i];
+      file = files[i];
 
-        stat = fs.statSync(path.resolve(dir, file));
+      stat = fs.statSync(path.resolve(dir, file));
 
-        if (stat.isFile()) {
-            file = file.split('.')[0].split('(')[0].trim();
+      if (stat.isFile()) {
+        file = file.split('.')[0].split('(')[0].trim();
 
-            map[file] = true;
-        }
+        map[file] = true;
+      }
     }
 
     files = [];
-    i = 0;
 
     for (file in map) {
-        if (map.hasOwnProperty(file)) {
-            files[i] = file;
-            i += 1;
-        }
+      if (map.hasOwnProperty(file)) {
+        files.push(file);
+      }
     }
 
     files = files.sort();
     count = files.length;
     for (i = 0; i < count; i += 1) {
-        file = files[i].replace(/ /g, '%%20');
-        console.log('\"C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe\" \"http://www.imdb.com/search/title?title=%s&title_type=feature\"', file);
+      if (!!files[i]) {
+        if (onMac) {
+          file = files[i];
+          console.log('/Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome \"http://www.imdb.com/search/title?title=%s&title_type=feature\"', file);
+          if (i % 10 === 0) {
+            console.log('read -p "Press [Enter] key to continue..."');
+          }
+        } else {
+          file = files[i].replace(/ /g, '%%20');
+          console.log('\"C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe\" \"http://www.imdb.com/search/title?title=%s&title_type=feature\"', file);
+          if (i % 10 === 0) {
+            console.log("pause");
+          }
+        }
+      }
     }
 }
 

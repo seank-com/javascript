@@ -20,6 +20,7 @@ var http = require('http'),
 
     if (typeof uri === 'string') {
       options = url.parse(uri);
+      console.log(JSON.stringify(options));
     }
     if (options.protocol === "https:") {
       client = https;
