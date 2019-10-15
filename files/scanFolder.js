@@ -82,7 +82,7 @@ var path = require('path'),
                     console.log(err);
                 } else {
                     JSON.stringify(result, null, "\r\n");
-                    fs.writeFile(path.resolve('.', argv[3]), JSON.stringify(result), function (err) {
+                    fs.writeFile(path.resolve('.', argv[3]), JSON.stringify(result, null, 2), function (err) {
                         if (err) {
                             console.log(err);
                         }
