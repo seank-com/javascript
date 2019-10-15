@@ -24,6 +24,7 @@ var argv = process.argv,
       });
       return acc;
     });
+    console.log(qual);
 
     var result = player.map(function (val) {
       Object.getOwnPropertyNames(qual).forEach(function (name) {
