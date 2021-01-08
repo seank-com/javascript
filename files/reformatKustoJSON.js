@@ -25,7 +25,8 @@ var path = require('path'),
             v = null,
             ip = "",
             id = "",
-            result = {};
+            result = {},
+            out = "";
 
         if (argc !== 4) {
             console.log('usage: %s %s <filename> <filename>', argv[0], argv[1]);
@@ -57,15 +58,25 @@ var path = require('path'),
                         result[ip][id].push(item);
                     }
 
+                    out = "# Query:\n\n";
                     for(ip in result) {
                         console.log(ip);
+                        out += "\n# IP = " + ip;
                         for (id in result[ip]) {
                             console.log(id);
-                            result[ip][id].sort((a,b) => a.Timestamp.localeCompare(b.Timestamp))
+                            out += "\n## pid = " + id + "\nfile.cs:";
+                            result[ip][id].sort((a,b) => a.Timestamp.localeCompare(b.Timestamp));
+                            for (k in result[ip][id]) {
+                                v = JSON.stringify(result[ip][id][k], null, 2).split('\n');
+                                for (r in v) {
+                                    out += "\n    1  " + v[r];
+                                }
+                                out += "\n\n";
+                            }
                         }
                     }
 
-                    fs.writeFile(output, JSON.stringify(result, null, 2), function (err) {
+                    fs.writeFile(output, out, function (err) {
                         if (err) {
                             console.log(err);
                         }
