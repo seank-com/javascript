@@ -9,13 +9,16 @@ var path = require('path'),
         "use strict";
 
         var input = "",
+            output = "",
             i = 0,
-            result = {};
+            result = [],
+            errors = [];
 
-        if (argc !== 3) {
-            console.log('usage: %s %s <filename>', argv[0], argv[1]);
+        if (argc !== 4) {
+            console.log('usage: %s %s <input filename> <output filename>', argv[0], argv[1]);
         } else {
             input = path.resolve('.', argv[2]);
+            output = path.resolve('.', argv[3]);
 
             fs.readFile(input, { 'encoding': "utf8" }, function (err, data) {
                 if (err) {
@@ -24,9 +27,15 @@ var path = require('path'),
                     result = JSON.parse(data);
                     for (i = 0; i < result.length; i += 1) {
                       if (result[i].hasOwnProperty("ProvisioningStatus") && result[i]["ProvisioningStatus"] !== "Completed") {
-                        console.log(JSON.stringify(result[i], null, 2));
+                        errors.push(result[i]);
                       }
                     }
+
+                    fs.writeFile(output, JSON.stringify(errors/*, null, 2*/), function (err) {
+                        if (err) {
+                            console.log(err);
+                        }
+                    });    
                 }
             });
         }
