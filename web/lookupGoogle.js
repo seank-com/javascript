@@ -31,7 +31,8 @@ function processDirectory(dir) {
       stat = fs.statSync(path.resolve(dir, file));
 
       if (stat.isFile()) {
-        file = file.split('.')[0].split('(')[0].trim();
+        //file = file.split('.')[0].split('(')[0].trim();
+        file = file.split('.')[0].trim();
 
         map[file] = true;
       }
@@ -50,16 +51,20 @@ function processDirectory(dir) {
     for (i = 0; i < count; i += 1) {
       if (!!files[i]) {
         if (onMac) {
-
           file = files[i].replace(spaces, '+');
-//          console.log('/Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome \"http://www.imdb.com/search/title?title=%s&title_type=feature\"', file);
-          console.log('/Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome \"http://www.imdb.com/search/title?title=%s\"', file);
+          file = file.replace('(', "%28");
+          file = file.replace(')', "%29");
+
+          console.log('/Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome \"https://www.google.com/search?q=imdb+%s\"', file);
           if (i % 10 === 0) {
             console.log('read -p "Press [Enter] key to continue..."');
           }
         } else {
-          file = files[i].replace(/ /g, '%%20');
-          console.log('\"C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe\" \"http://www.imdb.com/search/title?title=%s&title_type=feature\"', file);
+          file = files[i].replace(spaces, '%%20');
+          file = file.replace('(', "%28");
+          file = file.replace(')', "%29");
+
+          console.log('\"C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe\" \"https://www.google.com/search?q=imdb+%s\"', file);
           if (i % 10 === 0) {
             console.log("pause");
           }
