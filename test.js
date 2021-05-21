@@ -34,6 +34,12 @@
 //     });
 
 //     console.log(result);
+//     // Expect:
+//     // [ 
+//     //   { name: 'Virat', qualification: 'B.E', Salary: '$100' },
+//     //   { name: 'MESSI', qualification: 'B.E', Salary: '$100' },
+//     //   { name: 'CR7', qualification: 'B.E', Salary: '$100' } 
+//     // ]
 //   };
 
 // main(argc, argv);
