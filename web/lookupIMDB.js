@@ -59,7 +59,7 @@ function processDirectory(dir) {
           }
         } else {
           file = files[i].replace(/ /g, '%%20');
-          console.log('\"C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe\" \"http://www.imdb.com/search/title?title=%s&title_type=feature\"', file);
+          console.log('\"c:\\Program Files\\Google\\Chrome\\Application\\chrome.exe\" \"https://www.imdb.com/find?q=%s&ref_=nv_sr_srsg_1\"', file);
           if (i % 10 === 0) {
             console.log("pause");
           }
