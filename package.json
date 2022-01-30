@@ -23,7 +23,7 @@
     "utimes": "Used by files/touchPath.js"
   },
   "devDependencies": {
-    "jshint": "^2.12.0"
+    "jshint": "^2.13.4"
   },
   "devDependenciesComents": {
     "jshint": "Used by jshint extension to aid in code correctness."
