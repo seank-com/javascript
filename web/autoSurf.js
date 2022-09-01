@@ -12,7 +12,6 @@ var http = require('http'),
   fs = require('fs'),
   url = require('url'),
   htmlparser = require('htmlparser2'), // npm install htmlparser2 -g
-  async = require('async'), //npm install async -g
   dbg = function () {
     "use strict";
     console.log.apply({}, arguments);

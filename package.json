@@ -17,15 +17,17 @@
   },
   "homepage": "https://github.com/seank-com/Javascript#readme",
   "dependencies": {
-    "utimes": "^4.0.3"
+    "utimes": "^4.0.3",
+    "htmlparser2": "^3.9.1"
   },
   "dependenciesComments": {
-    "utimes": "Used by files/touchPath.js"
+    "utimes": "Used by files/touchPath.js",
+    "htmlparser2": "Used by web/autoSurf.js"
   },
   "devDependencies": {
     "jshint": "^2.13.4"
   },
-  "devDependenciesComents": {
+  "devDependenciesComments": {
     "jshint": "Used by jshint extension to aid in code correctness."
   }
 }
