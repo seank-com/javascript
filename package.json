@@ -17,12 +17,14 @@
   },
   "homepage": "https://github.com/seank-com/Javascript#readme",
   "dependencies": {
-    "utimes": "^4.0.3",
-    "htmlparser2": "^3.9.1"
+    "dotenv": "^16.0.3",
+    "htmlparser2": "^3.9.1",
+    "utimes": "^4.0.3"
   },
   "dependenciesComments": {
     "utimes": "Used by files/touchPath.js",
-    "htmlparser2": "Used by web/autoSurf.js"
+    "htmlparser2": "Used by web/autoSurf.js",
+    "dotenv": "Used by azure/generateProfile.js"
   },
   "devDependencies": {
     "jshint": "^2.13.4"
