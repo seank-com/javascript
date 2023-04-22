@@ -27,8 +27,13 @@ Goto [Azure Active Directory](https://portal.azure.com/#view/Microsoft_AAD_IAM/A
 - Click ```New registration```
 - Provide a name
 - Select Single tenant account type
-- Set the redirect uri to ```https://localhost```
-- Click Register
+- Choose ```Single-page application (SPA)``` and set the redirect uri to "https://localhost"
+- Click ```Register```
+- Copy the ```Application (client) ID``` for AZURE_CLIENT_ID
+- Click ```API permissions```
+- Choose ```Azure Service Management```
+- Check ```user-impersonation```
+- Click ```Add permissions```
 
 ### Create a client secret
 
@@ -37,8 +42,9 @@ After you AAD App registration is created select ```Certificates & secrets```
 - Provide a description
 - Choose an expiration
 - Click ```Add```
-- Copy the Value for AZURE_CLIENT_SECRET and the Secret ID for AZURE_CLIENT_ID
-_**IMPORTANT:** this is the only time the value is available, if you don't copy it now, you will need to create another client secret_
+- Copy the Value for AZURE_CLIENT_SECRET
+
+_**IMPORTANT:** this is the only time the Value is available, if you don't copy it now, you will need to create another client secret_
 
 ### Grant permissions to a Subscription for an App registration
 

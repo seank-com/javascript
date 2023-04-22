@@ -320,6 +320,36 @@ async function getProvider(bearerToken, providerNamespace) {
   return response;  
 }
 
+async function listSkus(bearerToken) {
+  // https://learn.microsoft.com/en-us/rest/api/compute/resource-skus/list?tabs=HTTP
+  const listSkusUri = `https://management.azure.com/subscriptions/${subscriptionId}/providers/Microsoft.Compute/skus?api-version=2021-04-01`;
+
+  var armRequest = url.parse(listSkusUri);
+  armRequest.headers = {
+    'Content-Type': 'application/json',
+    'Authorization': bearerToken
+  };
+
+  var response = await get(armRequest);
+
+  return response;
+}
+
+async function listUsage(bearerToken, location) {
+  // https://learn.microsoft.com/en-us/rest/api/compute/usage/list?tabs=HTTP
+  const listUsageUri = `https://management.azure.com/subscriptions/${subscriptionId}/providers/Microsoft.Compute/locations/${location}/usages?api-version=2021-04-01`;
+
+  var armRequest = url.parse(listUsageUri);
+  armRequest.headers = {
+    'Content-Type': 'application/json',
+    'Authorization': bearerToken
+  };
+
+  var response = await get(armRequest);
+
+  return response;
+}
+
 async function main() {
 
   var bearerToken = await getBearerToken();
@@ -360,9 +390,17 @@ async function main() {
   response = await getProvider(bearerToken, 'Microsoft.Compute');
   await save('computeProvider.json', response);
 
-  console.log('Resources');
-  response = await listResources(bearerToken, 'factory-ai-vision');
-  await save('resources.json', response);
+  console.log('Skus');
+  response = await listSkus(bearerToken);
+  await save('skus.json', response);
+
+  console.log('Usage');
+  response = await listUsage(bearerToken, 'westus2');
+  await save('usage.json', response);
+
+  // console.log('Resources');
+  // response = await listResources(bearerToken, 'factory-ai-vision');
+  // await save('resources.json', response);
 }
 
 main();
