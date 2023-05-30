@@ -12,33 +12,22 @@ var http = require('http'),
   fs = require('fs'),
   url = require('url'),
   htmlparser = require('htmlparser2'), // npm install htmlparser2 -g
+  //
+  // dbg
+  //
+  // Helper function that wraps console.log to make it easier to turn off
+  // debugging output.
+  //
   dbg = function () {
     "use strict";
-    console.log.apply({}, arguments);
+//    console.log.apply({}, arguments);
   },
-  mkdirp = function (directory, callback) {
-    "use strict";
-
-    fs.mkdir(directory, function (err1) {
-      if (err1) {
-        if (err1.code === 'EEXIST') {
-          callback(null);
-        } else if (err1.code === 'ENOENT') {
-          mkdirp(path.dirname(directory), function (err2) {
-            if (err2) {
-              callback(err2);
-            } else {
-              mkdirp(directory, callback);
-            }
-          });
-        } else {
-          callback(err1);
-        }
-      } else {
-        callback(null);
-      }
-    });
-  },
+  //
+  // download
+  //
+  // Helper function that wraps a get request and returns the response 
+  // respecting redirects and using https if needed
+  //
   download = function (uri, callback) {
     "use strict";
 
@@ -67,6 +56,13 @@ var http = require('http'),
       callback(err, null);
     });
   },
+  //
+  // downloadFile
+  //
+  // Helper function that wraps the download function and saves the response to the 
+  // specified filename. If the filename specifies a directory does not exist, 
+  // it will be created.
+  //
   downloadFile = function (uri, filename, callback) {
     "use strict";
 
@@ -95,8 +91,14 @@ var http = require('http'),
         }
       },
       directory = path.dirname(filename);
-    mkdirp(directory, directoryReady);
+    fs.mkdir(directory, { recursive: true }, directoryReady);
   },
+  //
+  // getHTML
+  //
+  // Helper function that wraps the download function to get an HTML page and 
+  // return it as a utf8 encoded string.
+  //
   getHTML = function (uri, callback) {
     "use strict";
 
@@ -119,6 +121,26 @@ var http = require('http'),
       };
     download(uri, processHTML);
   },
+  //
+  // parseHtml
+  //
+  // Helper function that wraps the getHTML function and parses the HTML 
+  // using the htmlparser2 module looking for urls in the page. Retruns an 
+  // object containing the source url and a list of object decribing the urls 
+  // found in the page. The response has the following form:
+  //
+  // {
+  //   "sourceUrl": "<url of page parsed>",
+  //   "urlsFound": [
+  //     {
+  //       "src": "<url of page parsed>",
+  //       "type": "a.href" | "img.src" | "img.data-src" | "iframe.src" | "meta.content",
+  //       "url": "<url found>"
+  //     },
+  //     ...
+  //   ]
+  // }
+  //
   parseHtml = function (sourceUrl, callback) {
     "use strict";
 
@@ -126,24 +148,38 @@ var http = require('http'),
 
     getHTML(sourceUrl, function (err, response) {
       var whenOpenTag = function (name, attribs) {
+          var result = {
+            src: sourceUrl
+          };
+
           if (name === 'a') {
             if (attribs.href) {
-              results.push(url.resolve(sourceUrl, attribs.href));
+              result.type = 'a.href';
+              result.url = url.resolve(sourceUrl, attribs.href);
+              results.push(result);
             }
           } else if (name === 'img') {
             if (attribs.src) {
-              results.push(url.resolve(sourceUrl, attribs.src));
+              result.type = 'img.src';
+              result.url = url.resolve(sourceUrl, attribs.src);
+              results.push(result);
             }
-            if (attribs["data-src"]) {
-              results.push(url.resolve(sourceUrl, attribs["data-src"]));
+            if (attribs['data-src']) {
+              result.type = 'img.data-src';
+              result.url = url.resolve(sourceUrl, attribs['data-src']);
+              results.push(result);
             }
           } else if (name === 'iframe') {
             if (attribs.src) {
-              results.push(url.resolve(sourceUrl, attribs.src));
+              result.type = 'iframe.src';
+              result.url = url.resolve(sourceUrl, attribs.src);
+              results.push(result);
             }
           } else if (name === 'meta') {
             if (attribs.content) {
-              results.push(url.resolve(sourceUrl, attribs.content));
+              result.type = 'meta.content';
+              result.url = url.resolve(sourceUrl, attribs.content);
+              results.push(result);
             }
           }
         },
@@ -160,21 +196,78 @@ var http = require('http'),
       }
     });
   },
+  //
+  // getOperationChain
+  //
+  // Helper function that reads the specified file, trims whitespace and comments, 
+  // and parses the remaining text as JSON. The JSON is expected to be an array
+  // of objects that describe the operations to be performed.
+  //
+  // The operations have the following form:
+  //
+  // {
+  //   "operation": "download" | "parse" | "filter" | "tag" | "generate" | "IO",
+  //   ...
+  // }
+  //
+  // See the documentation for the individual operations below 
+  // (operationDownload, operationParse, operationFilter, operationTag, 
+  // operationGenerate, operationIO) for the additional properties that are 
+  // included in each object.
+  //
   getOperationChain = function (filename, callback) {
     "use strict";
 
-    var result = {};
+    var result = {}, json = '';
 
     fs.readFile(filename, { 'encoding': "utf8" }, function (err, data) {
       if (err) {
         console.log('failed to read operation chain');
         callback(err, null);
       } else {
-        result = JSON.parse(data);
+        data.split('\n').forEach(function (line) {
+          var lineData = line.trim();
+          if (lineData.length > 0 && // skip blank lines
+            (lineData.charAt(0) !== '#' || // skip comment lines starting with #
+            lineData.substring(0, 2) !== '//')) { // skip comment lines starting with //
+            json += `${lineData}\n`;
+          }
+        });
+        result = JSON.parse(json);
         callback(null, result);
       }
     });
   },
+  //
+  // batchWork
+  //
+  // Helper functions for pseudo multi-threading. Node.js is single threaded 
+  // but using asynchronous function that do work in other threads and 
+  // callback into Node's single thread when they complete or error out.
+  // batchWork uses this fact to 'queue' upto batchMax jobs asynchronously. 
+  // Once those jobs complete, if there are no errors, it 'queues' another 
+  // batchMax number of jobs until it runs all jobs. This way if you have a 
+  // list of 1000 items you don't queue 1000 asynchronous downloads at once.
+  //
+  // batchWork defines 3 functions: workCallback, queueWork and processBatch.
+  // Then it gets the elements of the operation that need to be processed, 
+  // initialize batchSize, uses process.nextTick to call processBatch and 
+  // returns immediately.
+  // 
+  // processBatch checks to see if there are any elements left to process. If 
+  // so, it dequeues upto matchMax elements and calls queueWork on each of 
+  // them before returning.
+  //
+  // queueWork calls the worker function with the element and the 
+  // workCallback as the callback when worker completes.
+  //
+  // workCallback decrements batchSize and if there is an error, it sets the
+  // fail variable to the error. If batchSize is less than 1, it checks to
+  // see if there was a failure. If so, it calls the callback with the error.
+  // If not, it checks to see if there are any elements left to process. If
+  // not, it calls the callback with the operation. If so, it calls
+  // processBatch.
+  //
   batchWork = function (batchMax, operation, worker, callback) {
     "use strict";
 
@@ -229,12 +322,18 @@ var http = require('http'),
         dbg("DBG: batching ", count, " jobs");
         processBatch();
       } else {
-        dbg("DBG: nothing to do");
+        dbg("DBG: nothing left to do");
         callback(null, operation);
       }
     });
     return count;
   },
+  //
+  // longestCommonSubstring
+  //
+  // Helper function that finds the longest common substring between two 
+  // strings. It is not used in the code but is included here for giggles.
+  //
   longestCommonSubstring = function (s1, s2) {
     "use strict";
 
@@ -260,29 +359,35 @@ var http = require('http'),
     return result;
   },
   //
-  // Downloads all input urls. If pattern is specified,
-  // then it is applied against the url so the capture
-  // groups can be used with filename and directory. If
-  // filename is specified, it saves to that filename
-  // (you can use {1} notation to use capture groups
-  // from the pattern). If filename is not specified,
-  // the name of the file in the url is used. If
-  // directory is specified, file is stored there,
-  // otherwise in the current directory.
+  // Downloads all incoming urls. Incoming urls are composed of urls from the 
+  // output of the previous operation merged with urls from the input property 
+  // of this operation. If pattern is specified, then it is applied against 
+  // the url so the capture groups can be used with filename and directory. If 
+  // filename is specified, it saves to that filename (you can use {1} 
+  // notation to use capture groups from the pattern). If filename is not 
+  // specified, the name of the file in the url is used. If directory is 
+  // specified, file is stored there, otherwise in the current directory.
   //
-  // The output contains any input urls that failed to
-  // download.
+  // The output contains any input urls that failed to download.
   //
   //  {
   //    "operation": "download",
-  //    "input": [url, ...],
-  //      - optional, if provided it is appended to output of previous operation
+  //    "input": ["url", ...],
+  //      - optional, if provided, it is appended to output of previous 
+  //        operation.
   //    "pattern": "^.*/([^/]+)/([^/]+)$"
-  //      - optional
+  //      - optional, if provided, it is used to extract data from the input 
+  //        urls using capture groups.
   //    "directory": "{1}"
-  //      - optional
+  //      - optional, if provided, it is used to format the directory to save 
+  //        the file in. If not provided, files are saved in the current 
+  //        directory. Note: you can use {1} notation to use capture groups 
+  //        from the pattern.
   //    "filename": "{2}"
-  //      - optional
+  //      - optional, if provided, it is used to format the filename to save 
+  //        the file in. If not provided, the filename in the url is used. 
+  //        Note: you can use {1} notation to use capture groups from the 
+  //        pattern.
   //  }
   //
   operationDownload = function (operation, callback) {
@@ -344,21 +449,25 @@ var http = require('http'),
     downloads = batchWork(4, operation, downloadWorker, callback);
   },
   //
-  // Downloads all the input urls and parses the HTML for
-  // urls in <a>, <img>, <iframe> and <meta> tags and
-  // adds them to output. If annotate is specified, appends
-  // the annotation pattern and the input url to the
-  // resulting url to disambiguate duplicates.
+  // Downloads all incoming urls and parses the HTML for urls in <a>, <img>, 
+  // <iframe>, and <meta> tags and passes them on as output. Incoming urls are 
+  // composed of urls from the output of the previous operation merged with 
+  // urls from the input property of this operation. If annotate is specified, 
+  // appends the annotation pattern and the input url to the resulting url to 
+  // disambiguate duplicates. The resulting output will have 'src', 'type', 
+  // and 'url' tags (see parseHtml above for more details).
   //
-  // The output contains urls found from downloading and
-  // parsing the input urls.
+  // The output contains urls found from downloading and parsing the input 
+  // urls.
   //
   //  {
   //    "operation": "parse",
-  //    "input": [url, ...],
-  //      - optional, if provided it is appended to output of previous operation
+  //    "input": ["url", ...],
+  //      - optional, if provided, it is appended to output of previous 
+  //        operation.
   //    "annotate": "#####"
-  //     - optional
+  //      - optional, if provided, appends the annotation pattern and the 
+  //        input url to the resulting url to disambiguate duplicates
   //  }
   //
   operationParse = function (operation, callback) {
@@ -367,17 +476,18 @@ var http = require('http'),
     var pages = 0,
       parseWorker = function (element, workCallback) {
         parseHtml(element, function (err, result) {
-          var i, source = operation.input[result.sourceUrl] || {}, uri;
+          var i, source = operation.input[result.sourceUrl] || {}, target, uri;
 
           if (err) {
             console.log('ERROR parsing: ' + result.sourceUrl + '\n      message: ' + err.message);
           } else {
             for (i = 0; i < result.urlsFound.length; i += 1) {
-              uri = result.urlsFound[i];
+              target = result.urlsFound[i];
+              uri = target.url;
               if (operation.annotate) {
                 uri += operation.annotate + result.sourceUrl;
               }
-              operation.output[uri] = Object.assign({}, source);
+              operation.output[uri] = Object.assign(target, source);
             }
             console.log('Parsed (' + pages + ' remaining): ' + result.sourceUrl);
           }
@@ -391,27 +501,40 @@ var http = require('http'),
           workCallback(null);
         });
       };
-    pages = batchWork(20, operation, parseWorker, callback);
+    pages = batchWork(4, operation, parseWorker, callback);
   },
   //
-  // Copies all input urls that match the include
-  // pattern but do not match the exclude pattern to
-  // output. If prune is specified, then prunes everything
-  // after and including the specified annotation pattern.
+  // Copies all incomnig urls that match the include pattern but do not match 
+  // the exclude pattern to output. Incoming urls are composed of urls from 
+  // the output of the previous operation merged with urls from the input 
+  // property of this operation. If prune is specified, then prunes everything 
+  // after and including the specified annotation pattern. If matchingTags is 
+  // specified, filters out any urls that either do not have the specified 
+  // tags (see tag operation below) or whose tag value do not match the 
+  // specified tag values.
   //
-  // The output contains any pruned input urls that are
-  // included but not excluded.
+  // The output contains the resulting list of incoming urls after filtering 
+  // as described above.
   //
   //  {
   //    "operation": "filter",
-  //    "input": [url, ...],
-  //      - optional, if provided it is appended to output of previous operation
+  //    "input": ["url", ...],
+  //      - optional, if provided, it is appended to output of previous 
+  //        operation.
   //    "include": "^.*text1.*$",
-  //     - optional
+  //      - optional, if provided, only urls that match the pattern are
+  //        included.
   //    "exclude": "^.*text2.*$",
-  //     - optional
+  //      - optional, if provided, urls that match the pattern are excluded.
   //    "prune": "####",
-  //     - optional
+  //      - optional, if provided, prunes everything after and including the
+  //      specified annotation pattern.
+  //    "matchingTags": {
+  //        "tag1": "text1"
+  //    }
+  //      - optional, if provided, filters out any urls that either do not
+  //      have the specified tags (see tag operation below) or whose tag value 
+  //      do not match the specified tag values.
   //  }
   //
   operationFilter = function (operation, callback) {
@@ -422,7 +545,10 @@ var http = require('http'),
       i = 0,
       j = 0,
       outputNames = [],
-      name = "";
+      name = "",
+      tags = {},
+      tagNames = [],
+      filter = false;
 
     if (operation.include) {
       if (operation.include[0] !== '^' || operation.include[operation.include.length - 1] !== '$') {
@@ -459,7 +585,21 @@ var http = require('http'),
           name = name.substring(0, j);
         }
       }
-      operation.output[name] = operation.input[outputNames[i]];
+      if (operation.matchingTags) {
+        tags = operation.input[outputNames[i]];
+        tagNames = Object.getOwnPropertyNames(operation.matchingTags);
+        filter = false;
+        for (j = 0; j < tagNames.length; j += 1) {
+          if (tags[tagNames[j]] !== operation.matchingTags[tagNames[j]]) {
+            filter = true;
+          }
+        }
+        if (!filter) {
+          operation.output[name] = operation.input[outputNames[i]];
+        }
+      } else {
+        operation.output[name] = operation.input[outputNames[i]];
+      }
     }
 
     if (operation.debug) {
@@ -471,21 +611,28 @@ var http = require('http'),
     });
   },
   //
-  // Copies all input urls to output. Adds tags that
-  // match the specified pattern.
+  // Copies all incoming urls to output. Incoming urls are composed of urls 
+  // from the output of the previous operation merged with urls from the input 
+  // property of this operation. If pattern is specified, then it is applied 
+  // against the url so the capture groups can be used. Adds tags with 
+  // specified values using capture groups from the pattern, if specified.
+  //
+  // The output contains the resulting list of incoming urls after tagging.
   //
   // {
   //   "operation": "tag",
   //   "input": [url, ...],
   //      - optional, if provided it is appended to output of previous operation
   //   "pattern": "^.*/([0-9]+)/([0-9]+)/([0-9]+)/.*$)",
-  //      - optional
+  //      - optional, if provided, it is used to extract data from the input
+  //      urls using capture groups.
   //   "tags": {
   //     "day":"{1}",
   //     "month": "{2}",
   //     "year": "{3}"
   //   }
-  //      - optional
+  //     - optional, if provided, adds tags with specified values using capture
+  //     groups from the pattern.
   // },
   //
   operationTag = function (operation, callback) {
@@ -498,22 +645,21 @@ var http = require('http'),
           i = 0,
           matches = [],
           tags = operation.input[element] || {},
-          tagNames = Object.getOwnPropertyNames(operation.tags);
+          tagNames = Object.getOwnPropertyNames(operation.tags),
+          pattern = operation.pattern || '^\\.*$';
 
-        if (operation.pattern) {
-          if (operation.pattern[0] !== '^' || operation.pattern[operation.pattern.length - 1] !== '$') {
-            console.log('ERROR: pattern must begin with ^ and end with $');
-            return;
-          }
-
-          re = new RegExp(operation.pattern);
-
-          matches = element.match(re);
-          for (i = 0; i < tagNames.length; i += 1) {
-            tags[tagNames[i]] = operation.tags[tagNames[i]].format(matches, tags);
-          }
-          operation.output[element] = tags;
+        if (pattern[0] !== '^' || pattern[pattern.length - 1] !== '$') {
+          console.log('ERROR: pattern must begin with ^ and end with $');
+          return;
         }
+
+        re = new RegExp(pattern);
+
+        matches = element.match(re);
+        for (i = 0; i < tagNames.length; i += 1) {
+          tags[tagNames[i]] = operation.tags[tagNames[i]].format(matches, tags);
+        }
+        operation.output[element] = tags;
       };
     operation.tags = operation.tags || {};
     operation.output = operation.input;
@@ -528,18 +674,31 @@ var http = require('http'),
     });
   },
   //
-  // Generates urls for each pattern in patterns
-  // replacing {0} with values from start increased by
-  // increment until the value exceeds end.
+  // Copies all incoming urls to output. Incoming urls are composed of urls 
+  // from the output of the previous operation merged with urls from the input 
+  // property of this operation. Generates additional urls for each pattern in 
+  // patterns replacing {0} with values from start increased by increment 
+  // until the value exceeds end.
+  //
+  // The output contains the resulting list of incoming urls after generating
+  // additional urls.
   //
   //  {
   //    "operation": "generate",
   //    "input": [url, ...],
+  //      - optional, if provided it is appended to output of previous 
+  //     operation.
   //    "patterns": [url, ...],
+  //      - optional, if provided, it is used to generate additional urls.
   //    "start": 2
+  //      - optional, if provided, it is used as the starting value for
+  //      generating additional urls.
   //    "increment": 1
+  //      - optional, if provided, it is used as the increment for
+  //      generating additional urls.
   //    "end" : 10
-  //    "output": [url, ...] - for each url in patterns replaces {0} with values from start to end increased by increment unitl the value exceeds end
+  //      - optional, if provided, it is used as the ending value for
+  //      generating additional urls.
   //  }
   //
   operationGenerate = function (operation, callback) {
@@ -558,7 +717,7 @@ var http = require('http'),
 
     for (i = 0; i < count; i += 1) {
       for (value = start; value <= end; value += increment) {
-        entry = operation.patterns[i].format(value);
+        entry = operation.patterns[i].format([value],{});
         operation.output[entry] = operation.output[entry] || {};
       }
     }
@@ -569,21 +728,21 @@ var http = require('http'),
   },
   //
   // Copies input to output. If inputFilename is specified,
-  // reads JSON array of strings and appends to output. If
-  // outputFilename is specified, writes output as JSON.
+  // either reads JSON array of strings and appends to output, or 
+  // reads JSON object and merges with output. If outputFilename is specified, 
+  // writes output as JSON using padding if specified to format output.
   //
   //  {
   //    "operation": "IO",
   //    "input": [url, ...],
   //      - optional, if provided it is appended to output of previous operation
   //    "inputFilename": "{1}"
-  //      - optional
+  //      - optional, if provided, reads and appends as described above
   //    "outputFilename": "{1}"
-  //      - optional
+  //      - optional, if provided, writes output as described above
   //    "padding": "  "
-  //      - optional, if provided formats json using
-  //        specified padding, otherwise json will have
-  //        minimal whitespace
+  //      - optional, if provided formats json using specified padding, 
+  //      otherwise json will have minimal whitespace
   //  }
   //
   operationIO = function (operation, callback) {
@@ -653,6 +812,14 @@ var http = require('http'),
     loadFile();
   },
   operations = [],
+  //
+  // doNextOperation
+  //
+  // dequeues next operation and calls it with the output
+  // of the previous operation. If the operation has an
+  // input property, it is merged with the output of the
+  // previous operation.
+  //
   doNextOperation = function (err, operation) {
     "use strict";
 
@@ -714,12 +881,18 @@ var http = require('http'),
           break;
         }
       } else {
-        if (Object.getOwnPropertyNames(input).length > 0) {
-          console.log(input);
+        if (Object.getOwnPropertyNames(operation.output).length > 0) {
+          console.log(operation.output);
         }
       }
     }
   },
+  //
+  // main
+  //
+  // Main entry point. Loads operations from file and
+  // calls doNextOperation to process them.
+  //
   main = function (argc, argv) {
     "use strict";
 
@@ -742,6 +915,13 @@ var http = require('http'),
   argv = process.argv,
   argc = argv.length;
 
+//
+// Add format to String prototype
+//
+// format replaces {0}, {1}, ... with the corresponding
+// element in the matches array. It also replaces {tag}
+// with the corresponding element in the tags object.
+//
 if (!String.prototype.format) {
   String.prototype.format = function (matches, tags) {
     "use strict";
@@ -755,4 +935,5 @@ if (!String.prototype.format) {
   dbg("DBG: defined format");
 }
 
+// call main
 main(argc, argv);
