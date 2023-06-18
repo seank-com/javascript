@@ -5,10 +5,10 @@ const url = require('url');
 
 require('dotenv').config();
 
-const clientId = process.env.LIVE_CLIENT_ID;
-const clientSecret = process.env.LIVE_CLIENT_SECRET;
-const tenantId = process.env.LIVE_TENANT_ID;
-const subscriptionId = process.env.LIVE_SUBSCRIPTION_ID;
+const clientId = process.env.MSFT_CLIENT_ID;
+const clientSecret = process.env.MSFT_CLIENT_SECRET;
+const tenantId = process.env.MSFT_TENANT_ID;
+const subscriptionId = process.env.MSFT_SUBSCRIPTION_ID;
 
 function post(options, requestBody) {
   options.method = 'POST';

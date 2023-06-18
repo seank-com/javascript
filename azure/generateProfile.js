@@ -6,10 +6,10 @@ const url = require('url');
 
 require('dotenv').config();
 
-const clientId = process.env.AZURE_CLIENT_ID;
-const clientSecret = process.env.AZURE_CLIENT_SECRET;
-const tenantId = process.env.AZURE_TENANT_ID;
-const subscriptionId = process.env.AZURE_SUBSCRIPTION_ID;
+const clientId = process.env.MSFT_CLIENT_ID;
+const clientSecret = process.env.MSFT_CLIENT_SECRET;
+const tenantId = process.env.MSFT_TENANT_ID;
+const subscriptionId = process.env.MSFT_SUBSCRIPTION_ID;
 
 function post(options, requestBody) {
   options.method = 'POST';
@@ -254,17 +254,16 @@ async function listProviders(bearerToken) {
 
 function summarizeProviders(providers) {
   var result = {};
-  for (var i = 0; i < providers.length; i++) {
-    var provider = providers[i];
+  for (var i = 0; i < providers.value.length; i++) {
+    var provider = providers.value[i];
 
     var namespace = provider.namespace;
     var registrationState = provider.registrationState;
     var resourceTypes = provider.resourceTypes.length;
 
-    if (!result.hasOwnProperty(registrationState))
-      result[registrationState] = [];    
+    if (!result.hasOwnProperty(registrationState)) result[registrationState] = [];    
 
-    result[registrationState].push(`${namespace} ${resourceTypes}`);
+    result[registrationState].push(`${namespace} with ${resourceTypes} ResourceTypes`);
   }
 
   for (var registrationState in result) {
@@ -354,52 +353,48 @@ async function main() {
 
   var bearerToken = await getBearerToken();
 
-  console.log('Locations');
-  var response = await listLocations(bearerToken);
-  summarizeLocations(response);
-  await save('locations.json', response);
+  // console.log('Locations');
+  // var response = await listLocations(bearerToken);
+  // summarizeLocations(response);
+  // await save('locations.json', response);
 
-  console.log('Features');
-  response = await listFeatures(bearerToken);
-  summarizeFeatures(response);
-  await save('features.json', response);
+  // console.log('Features');
+  // response = await listFeatures(bearerToken);
+  // summarizeFeatures(response);
+  // await save('features.json', response);
 
-  console.log('Deployments');
-  response = await listDeployments(bearerToken);
-  summarizeDeployments(response);
-  await save('deployments.json', response);
+  // console.log('Deployments');
+  // response = await listDeployments(bearerToken);
+  // summarizeDeployments(response);
+  // await save('deployments.json', response);
 
-  console.log('Template Specs');
-  response = await listTemplateSpecs(bearerToken);
-  summarizeTemplateSpecs(response);
-  await save('templateSpecs.json', response);
+  // console.log('Template Specs');
+  // response = await listTemplateSpecs(bearerToken);
+  // summarizeTemplateSpecs(response);
+  // await save('templateSpecs.json', response);
 
   console.log('Providers');
   response = await listProviders(bearerToken);
   summarizeProviders(response);
   await save('providers.json', response);
 
-  console.log('Provider Resource Types');
-  response = await listProviderResourceTypes(bearerToken, 'Microsoft.Compute');
-  await save('computeResourceTypes.json', response);
+  // response = await listProviderResourceTypes(bearerToken, 'Microsoft.Compute');
+  // await save('computeResourceTypes.json', response);
 
-  response = await listProviderResourceTypes(bearerToken, 'Microsoft.Cache');
-  await save('cacheResourceTypes.json', response);
+  // console.log('Provider');
+  // response = await getProvider(bearerToken, 'Microsoft.Compute');
+  // await save('computeProvider.json', response);
 
-  console.log('Provider');
-  response = await getProvider(bearerToken, 'Microsoft.Compute');
-  await save('computeProvider.json', response);
+  // console.log('Skus');
+  // response = await listSkus(bearerToken);
+  // await save('skus.json', response);
 
-  console.log('Skus');
-  response = await listSkus(bearerToken);
-  await save('skus.json', response);
-
-  console.log('Usage');
-  response = await listUsage(bearerToken, 'westus2');
-  await save('usage.json', response);
+  // console.log('Usage');
+  // response = await listUsage(bearerToken, 'westus2');
+  // await save('usage.json', response);
 
   // console.log('Resources');
-  // response = await listResources(bearerToken, 'factory-ai-vision');
+  // response = await listResources(bearerToken, 't-bearthur');
   // await save('resources.json', response);
 }
 
