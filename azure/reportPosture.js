@@ -257,13 +257,18 @@ function get(options) {
 
   return new Promise((resolve, reject) => {
     const request = https.request(options, (res) => {
-      var responseBody = '';
+      var responseBody;
       res.on('data', (d) => {
+        responseBody = responseBody || '';
         responseBody += d;
       });
       res.on('end', () => {
-        var response = JSON.parse(responseBody);
-        resolve(response);
+        var response = responseBody ? JSON.parse(responseBody) : new Error(`Unexpected status code(${res.statusCode}): ${res.statusMessage}`);
+        if (res.statusCode !== 200) {
+          reject(response);
+        } else {
+          resolve(response);
+        }
       });
       res.on('error', (e) => {
         reject(e);
@@ -336,8 +341,18 @@ function summarizeProviders(providers) {
 
       for (var j = 0; j < resourceTypes.length; j++) {
         var resourceType = resourceTypes[j];
-        if (resourceType.capabilities !== 'None')
+        
+        if (resourceType.capabilities.indexOf("SupportsTags") >= 0 || resourceType.capabilities.indexOf("SupportsLocation") >= 0) {
           entry.resourceTypes.push(resourceType);
+        }
+
+        if (resourceType.resourceType === "operations") {
+          entry['operationsApiVersion'] = resourceType.apiVersions[0];
+        }
+
+        if (resourceType.resourceType === "registrations") {
+          entry['registrationsApiVersion'] = resourceType.apiVersions[0];
+        }
       }
 
       if (!result.hasOwnProperty(registrationState))
@@ -347,50 +362,103 @@ function summarizeProviders(providers) {
     }
   }
 
-  for (var registrationState in result) {
-    console.log(`${registrationState} (${result[registrationState].length})`);
-    for (var i = 0; i < result[registrationState].length; i++) {
-      var rps = result[registrationState][i];
-      console.log(`  ${rps.service} (${rps.namespace})`);
-      for (var j = 0; j < rps.resourceTypes.length; j++) {
-        var type = rps.resourceTypes[j].resourceType;
-        console.log(`    ${rps.resourceTypes[j].resourceType} (${rps.resourceTypes[j].capabilities})`);
-      }
-    }
-  }
-
   return result;
 }
 
-async function listProviderResourceTypes(bearerToken, resourceProviderNamespace) {
-  // https://learn.microsoft.com/en-us/rest/api/resources/provider-resource-types/list?tabs=HTTP
-  const listProviderResourceTypesUri = `https://management.azure.com/subscriptions/${subscriptionId}/providers/${resourceProviderNamespace}/resourceTypes?api-version=2021-04-01&%24expand=metadata`;
+async function listOperations(bearerToken, resourceProvider, apiVersion) {
+  // https://learn.microsoft.com/en-us/rest/api/appservice/provider/list-operations?tabs=HTTP
+  const listOperations = `https://management.azure.com/providers/${resourceProvider}/operations?api-version=${apiVersion}`
 
-  var armRequest = url.parse(listProviderResourceTypesUri);
+  var armRequest = url.parse(listOperations);
   armRequest.headers = {
     'Content-Type': 'application/json',
     'Authorization': bearerToken
   };
 
-  var response = await get(armRequest);
+  try {
+    const response = await get(armRequest);
 
-  return response;
+    if (response.error) {
+      console.log(`${resourceProvider} operations failed`);
+      console.log(response.error);
+      response = {
+        value: []
+      };
+    }
+  
+    return response;
+  } catch (e) {
+    console.log(`${resourceProvider} operations failed`);
+    console.log(e);
+    return {
+      value: []
+    };
+  }
 }
 
-async function getProvider(bearerToken, providerNamespace) {
-  // https://learn.microsoft.com/en-us/rest/api/resources/providers/get?tabs=HTTP
-  const getProviderUri = `https://management.azure.com/subscriptions/${subscriptionId}/providers/${providerNamespace}?api-version=2021-04-01&%24expand=metadata`;
+function summarizeOperations(resourceProvider, operations) {
+  var result = [],
+    lowerCase = false,
+    mixedCase = false,
+    upperCase = false,
+    noValue = false,
+    issues = [],
+    getProperty = function (lower, upper, defaultValue) {
+      if (lower) {
+        lowerCase = true;
+        mixedCase = upperCase;
+        return lower;
+      } else if (upper) {
+        upperCase = true;
+        mixedCase = lowerCase;
+        return upper;
+      } else {
+        return defaultValue;
+      }
+    },
+    getValue = function (operations) {
+      if (Array.isArray(operations)) {
+        noValue = true;
+        return operations;
+      }
+      return getProperty(operations.value, operations.Value, []);
+    },
+    value = getValue(operations);
 
-  var armRequest = url.parse(getProviderUri);
-  armRequest.headers = {
-    'Content-Type': 'application/json',
-    'Authorization': bearerToken
-  };
+  for (var i = 0; i < value.length; i++) {
+    var op = value[i];
 
-  var response = await get(armRequest);
+    var name = getProperty(op.name, op.Name, "Unknown");
+    var isDataAction = op.isDataAction || false;
+    var display = getProperty(op.display, op.Display, {});
+    var resource = getProperty(display.resource, display.Resource, "Unknown");
+    var operation = getProperty(display.operation, display.Operation, "Unknown");
 
-  return response;  
-}
+    var parts = name.split('/');
+    if (parts.length === 3 && parts[2] === 'write') {
+      result.push({
+        name: name,
+        resource: resource,
+        operation: operation
+      });
+    }
+  }
+
+  if (noValue) issues.push("missing value property");
+  if (mixedCase) {
+    issues.push("property names have inconsistent casing");
+  } else if (upperCase) {
+    issues.push("property names begin with uppercase");
+  }
+
+  if (issues.length > 0) {
+    console.log(`${resourceProvider} operations issue(s):\n${issues.join(', ')}`);
+  } else {
+    console.log(`${resourceProvider} operations`);
+  }
+
+  return result;
+}  
 
 async function listSkus(bearerToken) {
   // https://learn.microsoft.com/en-us/rest/api/compute/resource-skus/list?tabs=HTTP
@@ -411,23 +479,22 @@ async function main() {
 
   var bearerToken = await getBearerToken();
 
-  response = await listProviders(bearerToken);
-  summarizeProviders(response);
-  // await save('computeResourceTypes.json', response);
+  var response = await listProviders(bearerToken);
+  var result = summarizeProviders(response);
 
+  for (var registrationState in result) {
+    console.log(`${registrationState} (${result[registrationState].length})`);
+    for (var i = 0; i < result[registrationState].length; i++) {
+      var rp = result[registrationState][i];
+      if (rp.operationsApiVersion) {
+        response = await listOperations(bearerToken, rp.namespace, rp.operationsApiVersion);
+        ops = summarizeOperations(rp.namespace, response);
+        rp['operations'] = ops;
+      }
+    }
+  }
 
-  // console.log('Provider Resource Types');
-  // response = await listProviderResourceTypes(bearerToken, 'Microsoft.ServiceFabric');
-  // await save('serviceFabricResourceTypes.json', response);
-
-  // console.log('Provider');
-  // response = await getProvider(bearerToken, 'Microsoft.ServiceFabric');
-  // await save('serviceFabricProvider.json', response);
-
-  // console.log('Skus');
-  // response = await listSkus(bearerToken);
-  // await save('skus.json', response);
-
+  await save('report.json', result);
 }
 
 main();
