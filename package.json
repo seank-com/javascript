@@ -18,7 +18,7 @@
   "homepage": "https://github.com/seank-com/Javascript#readme",
   "dependencies": {
     "@azure/arm-resourcegraph": "^4.2.1",
-    "@azure/identity": "^3.1.4",
+    "@azure/identity": "^3.4.2",
     "dotenv": "^16.0.3",
     "htmlparser2": "^3.9.1",
     "utimes": "^4.1.1"
