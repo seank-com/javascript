@@ -349,6 +349,22 @@ async function listUsage(bearerToken, location) {
   return response;
 }
 
+async function getResource(bearerToken, id) {
+  // https://learn.microsoft.com/en-us/rest/api/resources/resources/get-by-id
+  const getResourceUri = `https://management.azure.com/${id}?api-version=2021-04-01`;
+
+  var armRequest = url.parse(getResourceUri);
+  armRequest.headers = {
+    'Content-Type': 'application/json',
+    'Authorization': bearerToken
+  };
+
+  var response = await get(armRequest);
+
+  return response;
+}
+
+
 async function main() {
 
   var bearerToken = await getBearerToken();
@@ -373,29 +389,229 @@ async function main() {
   // summarizeTemplateSpecs(response);
   // await save('templateSpecs.json', response);
 
-  console.log('Providers');
-  response = await listProviders(bearerToken);
-  summarizeProviders(response);
-  await save('providers.json', response);
+  //console.log('Providers');
+  //response = await listProviders(bearerToken);
+  //summarizeProviders(response);
+  //await save('providers.json', response);
 
-  // response = await listProviderResourceTypes(bearerToken, 'Microsoft.Compute');
-  // await save('computeResourceTypes.json', response);
+  // response = await listProviderResourceTypes(bearerToken, 'Microsoft.DocumentDB');
+  // await save('documentDBResourceTypes.json', response);
 
   // console.log('Provider');
   // response = await getProvider(bearerToken, 'Microsoft.Compute');
   // await save('computeProvider.json', response);
 
+  // console.log('ApiManagement Provider');
+  // response = await getProvider(bearerToken, 'Microsoft.ApiManagement');
+  // await save('ApiManagementProvider.json', response);
+
+  // console.log('Web Provider');
+  // response = await getProvider(bearerToken, 'Microsoft.Web');
+  // await save('WebProvider.json', response);
+
+  // console.log('Network Provider');
+  // response = await getProvider(bearerToken, 'Microsoft.Network');
+  // await save('NetworkProvider.json', response);
+
+  // console.log('NetworkAnalytics Provider');
+  // response = await getProvider(bearerToken, 'Microsoft.NetworkAnalytics');
+  // await save('NetworkAnalyticsProvider.json', response);
+
+  // console.log('NetworkCloud Provider');
+  // response = await getProvider(bearerToken, 'Microsoft.NetworkCloud');
+  // await save('NetworkCloudProvider.json', response);
+
+  // console.log('NetworkFunction Provider');
+  // response = await getProvider(bearerToken, 'Microsoft.NetworkFunction');
+  // await save('NetworkFunctionProvider.json', response);
+
+  // console.log('ADHybridHealthService Provider');
+  // response = await getProvider(bearerToken, 'Microsoft.ADHybridHealthService');
+  // await save('ADHybridHealthServiceProvider.json', response);
+
+  // console.log('AAD Provider');
+  // response = await getProvider(bearerToken, 'Microsoft.AAD');
+  // await save('AADProvider.json', response);
+
+  // console.log('AppConfiguration Provider');
+  // response = await getProvider(bearerToken, 'Microsoft.AppConfiguration');
+  // await save('AppConfigurationProvider.json', response);
+
+  // console.log('Search Provider');
+  // response = await getProvider(bearerToken, 'Microsoft.Search');
+  // await save('SearchProvider.json', response);
+
+  // console.log('DocumentDB Provider');
+  // response = await getProvider(bearerToken, 'Microsoft.DocumentDB');
+  // await save('DocumentDBProvider.json', response);
+
+  // console.log('Kusto Provider');
+  // response = await getProvider(bearerToken, 'Microsoft.Kusto');
+  // await save('KustoProvider.json', response);
+
+  // console.log('DBforMySQL Provider');
+  // response = await getProvider(bearerToken, 'Microsoft.DBforMySQL');
+  // await save('DBforMySQLProvider.json', response);
+
+  // console.log('DBforPostgreSQL Provider');
+  // response = await getProvider(bearerToken, 'Microsoft.DBforPostgreSQL');
+  // await save('DBforPostgreSQLProvider.json', response);
+
+  // console.log('ContainerService Provider');
+  // response = await getProvider(bearerToken, 'Microsoft.ContainerService');
+  // await save('ContainerServiceProvider.json', response);
+
+  // console.log('Maps Provider');
+  // response = await getProvider(bearerToken, 'Microsoft.Maps');
+  // await save('MapsProvider.json', response);
+
+  // console.log('Migrate Provider');
+  // response = await getProvider(bearerToken, 'Microsoft.Migrate');
+  // await save('MigrateProvider.json', response);
+
+  // console.log('OperationalInsights Provider');
+  // response = await getProvider(bearerToken, 'Microsoft.OperationalInsights');
+  // await save('OperationalInsightsProvider.json', response);
+
+  // console.log('OperationsManagement Provider');
+  // response = await getProvider(bearerToken, 'Microsoft.OperationsManagement');
+  // await save('OperationsManagementProvider.json', response);
+
+  // console.log('Sql Provider');
+  // response = await getProvider(bearerToken, 'Microsoft.Sql');
+  // await save('SqlProvider.json', response);
+
+  // console.log('SqlVirtualMachine Provider');
+  // response = await getProvider(bearerToken, 'Microsoft.SqlVirtualMachine');
+  // await save('SqlVirtualMachineProvider.json', response);
+
+  // console.log('StreamAnalytics Provider');
+  // response = await getProvider(bearerToken, 'Microsoft.StreamAnalytics');
+  // await save('StreamAnalyticsProvider.json', response);
+
+  // console.log('VirtualMachineImages Provider');
+  // response = await getProvider(bearerToken, 'Microsoft.VirtualMachineImages');
+  // await save('VirtualMachineImagesProvider.json', response);
+
+  // console.log('Backup Provider');
+  // response = await getProvider(bearerToken, 'Microsoft.Backup');
+  // await save('BackupProvider.json', response);
+
+  // console.log('BackupSolutions Provider');
+  // response = await getProvider(bearerToken, 'Microsoft.BackupSolutions');
+  // await save('BackupSolutionsProvider.json', response);
+
+  // console.log('Batch Provider');
+  // response = await getProvider(bearerToken, 'Microsoft.Batch');
+  // await save('BatchProvider.json', response);
+
+  // console.log('BatchAI Provider');
+  // response = await getProvider(bearerToken, 'Microsoft.BatchAI');
+  // await save('BatchAIProvider.json', response);
+
+  // console.log('ContainerInstance Provider');
+  // response = await getProvider(bearerToken, 'Microsoft.ContainerInstance');
+  // await save('ContainerInstanceProvider.json', response);
+
+  // console.log('ContainerRegistry Provider');
+  // response = await getProvider(bearerToken, 'Microsoft.ContainerRegistry');
+  // await save('ContainerRegistryProvider.json', response);
+
+  // console.log('Cdn Provider');
+  // response = await getProvider(bearerToken, 'Microsoft.Cdn');
+  // await save('CdnProvider.json', response);
+
+  // console.log('DataFactory Provider');
+  // response = await getProvider(bearerToken, 'Microsoft.DataFactory');
+  // await save('DataFactoryProvider.json', response);
+
+  // console.log('EventGrid Provider');
+  // response = await getProvider(bearerToken, 'Microsoft.EventGrid');
+  // await save('EventGridProvider.json', response);
+
+  // console.log('EventHub Provider');
+  // response = await getProvider(bearerToken, 'Microsoft.EventHub');
+  // await save('EventHubProvider.json', response);
+
+  // console.log('GuestConfiguration Provider');
+  // response = await getProvider(bearerToken, 'Microsoft.GuestConfiguration');
+  // await save('GuestConfigurationProvider.json', response);
+
+  // console.log('HDInsight Provider');
+  // response = await getProvider(bearerToken, 'Microsoft.HDInsight');
+  // await save('HDInsightProvider.json', response);
+
+  // console.log('KeyVault Provider');
+  // response = await getProvider(bearerToken, 'Microsoft.KeyVault');
+  // await save('KeyVaultProvider.json', response);
+
+  // console.log('Logic Provider');
+  // response = await getProvider(bearerToken, 'Microsoft.Logic');
+  // await save('LogicProvider.json', response);
+
+  // console.log('Cache Provider');
+  // response = await getProvider(bearerToken, 'Microsoft.Cache');
+  // await save('CacheProvider.json', response);
+
+  // console.log('ServiceBus Provider');
+  // response = await getProvider(bearerToken, 'Microsoft.ServiceBus');
+  // await save('ServiceBusProvider.json', response);
+
+  // console.log('ServiceFabric Provider');
+  // response = await getProvider(bearerToken, 'Microsoft.ServiceFabric');
+  // await save('ServiceFabricProvider.json', response);
+
+  // console.log('ServiceFabricMesh Provider');
+  // response = await getProvider(bearerToken, 'Microsoft.ServiceFabricMesh');
+  // await save('ServiceFabricMeshProvider.json', response);
+
+  // console.log('RecoveryServices Provider');
+  // response = await getProvider(bearerToken, 'Microsoft.RecoveryServices');
+  // await save('RecoveryServicesProvider.json', response);
+
+  // console.log('Storage Provider');
+  // response = await getProvider(bearerToken, 'Microsoft.Storage');
+  // await save('StorageProvider.json', response);
+
+  // console.log('Compute Provider');
+  // response = await getProvider(bearerToken, 'Microsoft.Compute');
+  // await save('ComputeProvider.json', response);
+  
   // console.log('Skus');
   // response = await listSkus(bearerToken);
   // await save('skus.json', response);
 
-  // console.log('Usage');
-  // response = await listUsage(bearerToken, 'westus2');
-  // await save('usage.json', response);
+  //console.log('Usage');
+  //response = await listUsage(bearerToken, 'eastus2');
+  //await save('usage.json', response);
 
   // console.log('Resources');
-  // response = await listResources(bearerToken, 't-bearthur');
-  // await save('resources.json', response);
+  // response = await listResources(bearerToken, 'broken-example');
+  // await save('broken-example.json', response);
+  // response = await listResources(bearerToken, 'example-test');
+  // await save('example-test.json', response);
+
+  
+  // response = await getResource(bearerToken, '/subscriptions/02f99241-5601-4009-a879-adbe527ac66f/resourceGroups/broken-example/providers/Microsoft.Compute/virtualMachines/brokenvm1');
+  // await save('brokenvm1.json', response);
+  // response = await getResource(bearerToken, '/subscriptions/02f99241-5601-4009-a879-adbe527ac66f/resourceGroups/broken-example/providers/Microsoft.Compute/disks/brokenvm1_OsDisk_1_296ff683949a43f9b62615ac283111e3');
+  // await save('brokenvm1_OsDisk_1_296ff683949a43f9b62615ac283111e3.json', response);
+  // response = await getResource(bearerToken, '/Subscriptions/02f99241-5601-4009-a879-adbe527ac66f/Providers/Microsoft.Compute/Locations/WestUS3/Publishers/canonical/ArtifactTypes/VMImage/Offers/0001-com-ubuntu-server-focal/Skus/20_04-lts-gen2/Versions/20.04.202307240');
+  // await save('brokenvm1_Disk_image.json', response);
+  // response = await getResource(bearerToken, '/subscriptions/02f99241-5601-4009-a879-adbe527ac66f/resourceGroups/broken-example/providers/Microsoft.Network/networkInterfaces/brokenvm152');
+  // await save('brokenvm152.json', response);
+  // response = await getResource(bearerToken, '/subscriptions/02f99241-5601-4009-a879-adbe527ac66f/resourceGroups/broken-example/providers/Microsoft.Network/publicIPAddresses/brokenvm1-ip');
+  // await save('brokenvm1-ip.json', response);
+  // response = await getResource(bearerToken, '/subscriptions/02f99241-5601-4009-a879-adbe527ac66f/resourceGroups/broken-example/providers/Microsoft.Network/networkSecurityGroups/brokenvm1-nsg');
+  // await save('brokenvm1-nsg.json', response);
+  // response = await getResource(bearerToken, '/subscriptions/02f99241-5601-4009-a879-adbe527ac66f/resourceGroups/broken-example/providers/Microsoft.Network/virtualNetworks/brokenvm1-vnet/subnets/default');
+  // await save('brokenvm1-subnet.json', response);}
+  // response = await getResource(bearerToken, '/subscriptions/02f99241-5601-4009-a879-adbe527ac66f/resourceGroups/broken-example/providers/Microsoft.Network/networkInterfaces/brokenvm152/ipConfigurations/ipconfig1');
+  // await save('brokenvm1-ipconfig.json', response);}
+
+  // response = await getResource(bearerToken, '/subscriptions/02f99241-5601-4009-a879-adbe527ac66f/resourceGroups/broken-example/providers/Microsoft.Compute/disks/brokenvm1_OsDisk_1_296ff683949a43f9b62615ac283111e3');
+  // await save('brokenvm1_OsDisk_1_296ff683949a43f9b62615ac283111e3.json', response);
+
 }
 
 main();

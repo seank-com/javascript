@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Email Form</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    form {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    input,
+    textarea {
+      display: block;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    textarea {
+      width: calc(100% - 20px);
+    }
+
+    button[type="button"] {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    button[type="button"]:hover {
+      background-color: #3e8e41;
+    }
+
+    .to-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .to-row label,
+    .to-row input,
+    .to-row button {
+      display: inline-block;
+      vertical-align: middle;
+      width: auto;
+    }
+
+    .to-row label {
+      margin-right: 5px;
+      margin-top: 10px;
+    }
+    .to-row input {
+      flex-grow: 1;
+      margin-bottom: 0;
+      margin-top: 10px;
+      margin-right: 15px;
+    }
+    .to-row button {
+      margin-left: 5px;
+      margin-top: 5px;
+    }
+
+    form button#add-to-row {
+      display: block;
+      margin-left: auto;
+    }
+    form button#generate-campaign {
+      display: block;
+      margin: 0 auto;
+    }
+
+    #links-section div {
+      display: flex;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+  <form>
+    <h3>Campaign Form</h3>
+    <div id="to-section">
+      <div class="to-row">
+        <label for="to-name-0">Name:</label>
+        <input type="text" id="to-name-0" name="to-name[]" required>
+        <label for="to-email-0">Email:</label>
+        <input type="email" id="to-email-0" name="to-email[]" required>
+        <button type="button" class="remove-to-row">Remove</button>
+      </div>
+    </div>
+    <button type="button" id="add-to-row">Add To</button>
+
+    <label for="subject">Subject:</label>
+    <input type="text" id="subject" name="subject" required>
+
+    <label for="body">Body:</label>
+    <textarea id="body" name="body" required></textarea>
+
+    <button type="button" id="generate-campaign">Generate Campaign</button>
+    <hr>
+    <h3>Campaign</h3>
+    <div id="links-section"></div>
+  </form>
+
+
+  <script>
+    function generateMailtoLink(name, email, subject, body) {
+      const replacedSubject = subject.replace('<Name>', name);
+      const replacedBody = body.replace(new RegExp('<Name>', 'g'), name);
+      return `mailto:${email}?subject=${encodeURIComponent(replacedSubject)}&body=${encodeURIComponent(replacedBody)}`;
+    }
+
+    function generateCampaign() {
+      const toRows = document.querySelectorAll('.to-row');
+      const subject = document.querySelector('#subject').value;
+      const body = document.querySelector('#body').value;
+      const linksSection = document.querySelector('#links-section');
+      linksSection.innerHTML = '';
+
+      for (let i = 0; i < toRows.length; i++) {
+        const name = toRows[i].querySelector('input[type="text"]').value;
+        const email = toRows[i].querySelector('input[type="email"]').value;
+        const link = generateMailtoLink(name, email, subject, body);
+
+        const linkContainer = document.createElement('div');
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = false;
+        const label = document.createElement('label');
+        label.textContent = `Click here to send an email to ${name}`;
+        const anchor = document.createElement('a');
+        anchor.href = link;
+        anchor.appendChild(label);
+
+        linkContainer.appendChild(checkbox);
+        linkContainer.appendChild(anchor);
+        linksSection.appendChild(linkContainer);
+      }
+    }
+
+    function addNewToRow() {
+      const toSection = document.querySelector('#to-section');
+      const toRows = document.querySelectorAll('.to-row');
+      const lastToRow = toRows[toRows.length - 1];
+      const newRow = lastToRow.cloneNode(true);
+      const inputs = newRow.querySelectorAll('input');
+      inputs.forEach(input => {
+        const id = input.getAttribute('id');
+        const name = input.getAttribute('name');
+        const newId = id.replace(/\d+/, toRows.length);
+        const newName = name.replace(/\[\d+\]/, `[${toRows.length}]`);
+        input.setAttribute('id', newId);
+        input.setAttribute('name', newName);
+        input.value = '';
+      });
+      newRow.querySelector('.remove-to-row').addEventListener('click', removeToRow);
+      toSection.appendChild(newRow);
+    }
+
+    function removeToRow(event) {
+      const toSection = document.querySelector('#to-section');
+      const toRows = document.querySelectorAll('.to-row');
+      if (toRows.length > 1) {
+        const row = event.target.closest('.to-row');
+        toSection.removeChild(row);
+      }
+    }
+
+    document.querySelector('#add-to-row').addEventListener('click', addNewToRow);
+    document.querySelector('#generate-campaign').addEventListener('click', generateCampaign);
+  </script>
+</body>
+</html>
